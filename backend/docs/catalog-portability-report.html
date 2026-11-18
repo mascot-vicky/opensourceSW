@@ -45,7 +45,7 @@
 
   <div class="lead">
     <strong>현재 결론</strong>
-    <p>데이터 파일의 전달·무결성 검증은 로컬에서 재현했어요. 팀장 PC에서 Docker로 실제 카탈로그를 제공하는 단계는 아직 완성되지 않았어요. 기능 PR의 병합, 파일 공급 설정, 다른 PC에서의 실행 검증이 남아 있어요.</p>
+    <p>데이터 파일의 전달·무결성 검증은 로컬에서 재현했어요. 파일 공급 설정은 <a href="https://github.com/seoJing/opensourceSW/pull/30">Draft PR #30</a>으로 준비했지만 팀장 PC에서 실제 Docker 실행은 아직 확인하지 못했어요. 선행 기능 PR의 병합과 다른 PC의 실행 검증이 남아 있어요.</p>
   </div>
 
   <div class="cards" aria-label="핵심 수치">
@@ -58,7 +58,7 @@
   <div class="table-wrap"><table>
     <thead><tr><th>항목</th><th>지금 확인한 사실</th><th>판정과 남은 증거</th></tr></thead>
     <tbody>
-      <tr><td>Git 브랜치·PR</td><td>Issue별 브랜치에서 <a href="https://github.com/seoJing/opensourceSW/pull/19">#19 인증</a>, <a href="https://github.com/seoJing/opensourceSW/pull/23">#23 카탈로그</a>, <a href="https://github.com/seoJing/opensourceSW/pull/25">#25 출처 문서</a>, <a href="https://github.com/seoJing/opensourceSW/pull/26">#26 설문</a>을 <code>main</code> 대상으로 올렸어요. #24는 선행 #23 위의 별도 브랜치로 푸시했어요.</td><td><span class="tag pending">리뷰·병합 대기</span> 병합 이력과 최소 1명 리뷰가 최종 증거예요.</td></tr>
+      <tr><td>Git 브랜치·PR</td><td>Issue별 브랜치에서 <a href="https://github.com/seoJing/opensourceSW/pull/19">#19 인증</a>, <a href="https://github.com/seoJing/opensourceSW/pull/23">#23 카탈로그</a>, <a href="https://github.com/seoJing/opensourceSW/pull/25">#25 출처 문서</a>, <a href="https://github.com/seoJing/opensourceSW/pull/26">#26 설문</a>, <a href="https://github.com/seoJing/opensourceSW/pull/28">#28 전달 기준</a>, <a href="https://github.com/seoJing/opensourceSW/pull/30">#30 Compose 연결</a>을 <code>main</code> 대상으로 올렸어요. #24는 선행 #23 위의 별도 브랜치로 푸시했어요.</td><td><span class="tag pending">리뷰·병합 대기</span> 병합 이력과 최소 1명 리뷰가 최종 증거예요.</td></tr>
       <tr><td>Docker·Kubernetes</td><td>Compose에 frontend, backend, db 세 서비스가 있어요. 프론트의 <code>/api/health</code>는 백엔드로, 백엔드는 PostgreSQL로 연결하고 <code>postgres_data</code> named volume이 있어요.</td><td><span class="tag pending">기본 구성 충족</span> 볼륨은 DB 파일용이며 카탈로그 JSON 적재 근거는 아니에요. Kubernetes 구성은 없어요.</td></tr>
       <tr><td>추가 오픈소스</td><td>백엔드 PR에는 Spring Security와 Jackson 사용 이력이 있어요. 프론트 런타임에는 Nginx가 있어요.</td><td><span class="tag pending">수업 목록 대조 필요</span> 수업에서 배운 오픈소스 목록을 확인해야 평가 인정 여부를 말할 수 있어요.</td></tr>
       <tr><td>GitHub Actions</td><td>저장소에 Frontend Lint/Test, Backend Test, Docker Build, Compose Smoke Test, Repository Checks, PR Coordination의 7개 워크플로가 있어요.</td><td><span class="tag ok">검사 7개 통과</span> PR #25와 #26의 현재 커밋에서 모두 통과했어요. 각 PR의 Actions 기록이 증거예요.</td></tr>
@@ -71,7 +71,7 @@
     <tbody>
       <tr><td><code>catalog.json → CatalogLoader → Catalog Bean</code></td><td>#24 브랜치에서 명시적으로 활성화하면 시작 시 JSON을 읽어 메모리에 보관해요. 파일이 없거나 형식이 틀리면 시작을 거부해요.</td></tr>
       <tr><td><code>Catalog → PostgreSQL</code></td><td><span class="tag gap">미구현</span> 카페·메뉴 테이블과 INSERT·마이그레이션이 없어요.</td></tr>
-      <tr><td><code>Docker Compose → catalog.json</code></td><td><span class="tag gap">미구현</span> 현재 Compose에는 JSON 파일 마운트와 <code>APP_CATALOG_PATH</code> 설정이 없어요.</td></tr>
+      <tr><td><code>Docker Compose → catalog.json</code></td><td><span class="tag pending">Draft PR #30</span> 선택형 읽기 전용 연결을 준비했어요. 현재 <code>main</code>에는 없고 실제 컨테이너 실행도 미검증이에요.</td></tr>
       <tr><td><code>frontend → /api/v1</code></td><td><span class="tag gap">미구현</span> Nginx는 현재 <code>/api/health</code>만 백엔드로 연결해요. 기능 API 경유는 별도 프록시 설정과 브라우저 검증이 필요해요.</td></tr>
       <tr><td><code>postgres_data</code></td><td>PostgreSQL의 저장 파일을 유지해요. JSON을 DB로 옮기는 동작은 하지 않아요.</td></tr>
     </tbody>
@@ -103,7 +103,7 @@
   <ol>
     <li>선행 PR #19·#23을 리뷰·병합하고 #20·#24의 최신 <code>main</code> 재검증을 마쳐요.</li>
     <li>팀 내부 공유 공간에서 버전 묶음을 받아 압축 파일 해시, 파일별 해시, manifest와 Java 로더를 확인해요.</li>
-    <li>별도 Issue에서 Compose의 읽기 전용 파일 연결과 설정, 프론트 기능 API 프록시를 합의·구현해요. DB 스키마·버전별 적재·롤백은 별도 범위로 설계해요.</li>
+    <li><a href="https://github.com/seoJing/opensourceSW/issues/29">Issue #29</a>의 Compose 파일 연결을 팀 PC에서 검증해요. 프론트 기능 API 프록시와 DB 스키마·버전별 적재·롤백은 별도 범위로 설계해요.</li>
     <li>새 PC에서 세 컨테이너의 health, 백엔드 파일 로딩, 프론트 API 경유 요청, 재시작 후 데이터·볼륨 유지까지 실행 증거를 남겨요.</li>
   </ol>
   <p class="note">이 보고서는 2026-11-18의 검증 스냅샷이에요. 병합과 팀 PC 실행 결과에 따라 상태를 갱신해야 해요.</p>
