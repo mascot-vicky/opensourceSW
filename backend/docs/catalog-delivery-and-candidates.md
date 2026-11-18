@@ -1,43 +1,29 @@
 # 카탈로그 팀 전달과 추천 후보 기준
 
-관련 작업: [Issue #27](https://github.com/seoJing/opensourceSW/issues/27) · 기준 데이터: `haenggung-2026-11-18.2` · 상태: 전체 취향 후보 검토 후 MVP 범위 선택
+관련 작업: [Issue #27](https://github.com/seoJing/opensourceSW/issues/27) · 기준 데이터: `haenggung-2026-11-18.2` · 상태: 데이터 전달 기준 정리, 취향 속성 설계 중지
 
-이 문서는 [출처와 입력 기준 PR #25](https://github.com/seoJing/opensourceSW/pull/25)의 실제 카탈로그를 팀원이 **동일한 실행 입력으로** 받는 절차와 추천 후보를 고르는 기준을 정한다. 원자료를 다시 수집하는 절차는 포함하지 않는다. 전체 취향 후보에서 MVP 항목을 고르는 단계이며 점수 공식·HTTP 필드·속성 목록을 확정하지 않는다.
+이 문서는 [출처와 입력 기준 PR #25](https://github.com/seoJing/opensourceSW/pull/25)의 실제 카탈로그를 팀원이 **동일한 실행 입력으로** 받는 절차와 추천 후보를 고르는 기준을 정한다. 원자료를 다시 수집하는 절차는 포함하지 않는다. 속성 객체와 질문은 담당 팀원이 합의할 사항이며 이 문서는 점수 공식·HTTP 필드·속성 목록을 확정하지 않는다.
 
 ## 1. 전달 단위
 
-다른 사용자는 버전별 압축 파일 `haenggung-2026-11-18.2.tar.gz`를 자신의 PC에 받아 사용한다. 전달 매체는 직접 파일 전달이나 접근을 제한한 공유 공간 등으로 선택할 수 있다. 특정 공유 서비스·사용자 계정·PC 접근은 실행 구성의 전제가 아니다. 묶음에는 아래 세 파일만 넣으며 실제 자료는 Git 저장소에 추가하지 않는다.
+기준 전달 방식은 PR #30에 포함한 `backend/data/catalog/haenggung-2026-11-18.2/`의 고정 데이터다. 팀원은 해당 PR 병합 후 저장소를 받으면 아래 파일을 함께 받는다. 별도 압축파일 전달이나 재수집은 필요하지 않다.
 
 | 파일 | 용도 |
 | --- | --- |
-| `catalog.json` | 백엔드 로더가 읽는 카페·메뉴 입력 |
+| `catalog.json` | 백엔드 로더가 검증해 DB에 적재하는 카페·메뉴 입력 |
 | `manifest.json` | 데이터 버전, 수량, 카탈로그 SHA-256과 수집 범위 |
-| `SHA256SUMS` | 받은 두 파일의 바이트 동일성 검사 |
+| `SHA256SUMS` | 두 JSON 파일의 바이트 동일성 검사 |
 
-검토용 원문, 수집 스크립트, `review-decisions.json`, API 자격 증명, 세션 정보는 실행 묶음에 넣지 않는다. 이 묶음은 **검토된 입력을 재현**하게 하며, 원천 페이지의 현재 상태나 재수집 결과가 같음을 보장하지 않는다. 공유 위치와 수신자는 실제 전달할 때 정한다.
-
-제공자는 고정된 버전 폴더에서 다음처럼 묶음을 만들고, 압축 파일의 SHA-256을 팀 내부 전달 메시지에 함께 적는다. 파일을 수정했다면 `dataVersion`과 묶음 이름을 함께 바꾸고 다시 검증한다.
+검토용 원문, 수집 스크립트, API 자격 증명과 세션 정보는 저장소 입력에 포함하지 않는다. 고정 입력은 **검토한 자료의 재현**을 위한 것이며 원천 페이지의 현재 상태나 새 수집 결과가 같음을 보장하지 않는다. 기존 `.tar.gz`는 동일 입력의 선택형 전달 사본이며 실행에 필수적이지 않다. 두 형식을 중복 커밋하지 않는다.
 
 ```sh
-cd /path/to/haenggung-2026-11-18.2
-sha256sum catalog.json manifest.json > SHA256SUMS
-tar -czf ../haenggung-2026-11-18.2.tar.gz catalog.json manifest.json SHA256SUMS
-sha256sum ../haenggung-2026-11-18.2.tar.gz
-```
-
-수신자는 공유 메시지의 압축 파일 해시를 먼저 대조한 후 빈 버전 폴더에 풀고 파일별 해시를 검사한다. 압축 파일의 해시와 `SHA256SUMS`가 모두 같아야 한다.
-
-```sh
-sha256sum haenggung-2026-11-18.2.tar.gz
-mkdir -p haenggung-2026-11-18.2
-tar -xzf haenggung-2026-11-18.2.tar.gz -C haenggung-2026-11-18.2
-cd haenggung-2026-11-18.2
+cd backend/data/catalog/haenggung-2026-11-18.2
 sha256sum -c SHA256SUMS
 ```
 
-위 해시 명령은 WSL·Linux 기준이다. macOS에서는 `shasum -a 256`과 `shasum -a 256 -c SHA256SUMS`, Windows PowerShell에서는 `Get-FileHash -Algorithm SHA256`으로 같은 값을 확인한다. 두 환경 모두 `tar -xzf`로 압축을 풀 수 있다. 호스트의 파일 경로를 Docker 컨테이너 내부 경로로 그대로 넘기지 않는다.
+macOS에서는 `shasum -a 256 -c SHA256SUMS`, Windows에서는 `Get-FileHash -Algorithm SHA256`으로 대조한다. 처음 환경을 구성하는 팀원은 PR #30의 `backend/docs/team-getting-started.html`을 따른다. 기본 Compose 확장은 저장소 안의 파일을 읽으며, 다른 버전을 사용할 때만 `CATALOG_FILE`을 지정한다. 버전 파일을 수정했다면 새 `dataVersion`을 사용한다.
 
-이 버전의 `manifest.json`에는 `catalogSha256=77101fe31346de40225d23adca5a485f74cb4861e98a9a8e9d1cf7474ab4eb0d`, 카페 320곳, 입력 메뉴 5,011건이 기록되어 있다. `catalog.json`의 `dataVersion`도 묶음 이름과 일치해야 한다. 체크섬을 통과해도 로더 검증을 생략하지 않는다. #22 로더로 스키마·참조를 검사하고, #24가 병합된 뒤에는 `APP_CATALOG_ENABLED=true`, `APP_CATALOG_PATH`를 지정해 시작 시 PostgreSQL에 적재한다. 같은 버전·같은 SHA-256은 중복 저장하지 않고, 같은 버전의 다른 바이트는 거부한다. 새 버전은 별도 폴더에 풀어 검증한 뒤 경로를 바꾼다. 직접 실행한 JVM은 재시작하고, Docker의 호스트 파일 연결을 바꿀 때는 [PR #30 실행 안내](https://github.com/seoJing/opensourceSW/pull/30)에 따라 백엔드 컨테이너를 다시 생성한다. 문제가 있으면 이전 경로로 같은 절차를 적용한다.
+이 버전의 `manifest.json`에는 `catalogSha256=77101fe31346de40225d23adca5a485f74cb4861e98a9a8e9d1cf7474ab4eb0d`, 카페 320곳, 입력 메뉴 5,011건이 기록되어 있다. `catalog.json`의 `dataVersion`도 묶음 이름과 일치해야 한다. 체크섬을 통과해도 로더 검증을 생략하지 않는다. #22 로더로 스키마·참조를 검사하고, #24가 병합된 뒤에는 `APP_CATALOG_ENABLED=true`, `APP_CATALOG_PATH`를 지정해 시작 시 PostgreSQL에 적재한다. 같은 버전·같은 SHA-256은 중복 저장하지 않고, 같은 버전의 다른 바이트는 거부한다. 새 버전은 별도 폴더에 저장·검증한 뒤 경로를 바꾼다. 직접 실행한 JVM은 재시작하고, Docker의 호스트 파일 연결을 바꿀 때는 [PR #30 실행 안내](https://github.com/seoJing/opensourceSW/pull/30)에 따라 백엔드 컨테이너를 다시 생성한다. 문제가 있으면 이전 경로로 같은 절차를 적용한다.
 
 현재 `main`의 Compose에는 JSON 파일 마운트나 카탈로그 DB 적재가 없다. PostgreSQL의 `postgres_data` 볼륨은 DB 파일을 지속시키지만 JSON을 자동으로 적재하지 않는다. 팀 시연에서 실제 자료를 컨테이너에 공급하기 위한 읽기 전용 연결은 [Draft PR #30](https://github.com/seoJing/opensourceSW/pull/30)에서 준비했다. 프론트 Nginx도 현재 `/api/health`만 백엔드로 연결하므로 기능 API 프록시는 별도 작업이다. Issue #24는 **JSON을 전달 원본으로, PostgreSQL을 조회 저장소로** 사용한다. 전체 저장과 활성 버전 전환을 한 트랜잭션에서 처리하며, 이전 버전은 보존한다. 적재 후 파일 연결을 해제해도 DB 데이터는 유지된다. DB 구현은 #24, 외부 파일 연결은 #29가 담당하며 이 문서는 전달·후보 기준을 다룬다.
 
