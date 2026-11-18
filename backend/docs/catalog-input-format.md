@@ -2,7 +2,9 @@
 
 관련 작업: [Issue #22](https://github.com/seoJing/opensourceSW/issues/22) · 선행 조사: [Issue #21](https://github.com/seoJing/opensourceSW/issues/21)
 
-백엔드가 검토된 JSON 파일을 읽기 위한 내부 형식입니다. 프론트 응답, DB 테이블, 설문·추천 점수 계약이 아닙니다. 현재 구현은 파일 로딩과 검증까지이며, 애플리케이션 시작 시 자동 로딩하거나 HTTP API로 제공하지 않습니다.
+백엔드가 검토된 JSON 파일을 읽기 위한 내부 형식입니다. 프론트 응답, DB 테이블, 설문·추천 점수 계약이 아닙니다. Issue #24는 이 입력을 시작 시 검증하여 PostgreSQL에 적재하고 DB에서 조회합니다. HTTP API는 별도 작업입니다.
+
+PR #23은 로더·검증을 제공합니다. 아래의 시작 시 PostgreSQL 적재·조회는 PR #31까지 포함한 코드에서 적용되며, 로더만으로 DB 적재가 실행되지는 않습니다.
 
 ## 입력 구조
 
@@ -11,7 +13,7 @@
 | 필드 | 규칙 |
 | --- | --- |
 | `schemaVersion` | JSON 정수 `1`. 다른 버전은 거부합니다. |
-| `dataVersion` | 공백이 아닌 문자열. 자료를 교체할 때 변경하며 설문 버전과 구분합니다. |
+| `dataVersion` | 공백이 아닌 문자열. 자료를 교체할 때 변경하며 설문 버전과 구분합니다. DB 적재 시 최대 128자입니다. |
 | `cafes` | 카페 객체 배열. 누락·null·빈 배열·null 원소를 거부합니다. |
 | `menus` | 메뉴 객체 배열. 누락·null·빈 배열·null 원소를 거부합니다. |
 
@@ -117,7 +119,28 @@ Catalog catalog = new CatalogLoader().load(Path.of("/path/to/catalog.json"));
 
 파일 읽기, JSON 파싱, 자료 검증에 실패하면 `CatalogLoadException`을 던집니다. `getFieldPath()`는 `$.menus[0].cafeId` 같은 오류 위치를 반환합니다. 파일 전체 오류는 `$`로 표시하며 읽기·파싱 실패의 원인 예외를 보존합니다. 임의 기본 자료나 빈 카탈로그로 대체하지 않습니다.
 
-기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 새 의존성·Spring Bean·시작 설정·운영 데이터 파일을 추가하지 않습니다. API 연결 단계에서 검토된 실제 파일 위치와 초기화 실패 처리를 정합니다.
+기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 파일 로더는 기존 Jackson을 사용하며, DB 마이그레이션은 Flyway를 사용합니다. 실제 운영 데이터 파일은 커밋하지 않습니다.
+
+## 시작 시 PostgreSQL 적재 — Issue #24
+
+| 설정 | 동작 |
+| --- | --- |
+| `app.catalog.enabled` | `true`이면 시작 시 파일을 적재합니다. 생략·`false`이면 파일을 읽지 않으며 기존 DB 조회는 유지합니다. |
+| `app.catalog.path` | 적재 활성화 시 필수인 로컬 JSON 파일 경로입니다. URL·classpath 위치는 지원하지 않습니다. |
+
+환경변수는 `APP_CATALOG_ENABLED`, `APP_CATALOG_PATH`입니다. Flyway가 테이블을 생성한 뒤 시작 실행기가 파일을 읽고 전체 검증을 통과한 자료를 한 트랜잭션에서 저장합니다. 완료 전에는 애플리케이션이 ready 상태가 되지 않습니다. `Catalog` 객체는 검증·적재 동안만 사용하며 싱글턴 Bean으로 보관하지 않습니다. 조회는 `CatalogRepository`가 SQL로 수행합니다.
+
+같은 `dataVersion`·같은 파일 SHA-256은 중복 저장하지 않습니다. 같은 버전의 내용이 다르면 시작을 거부합니다. 공백·줄바꿈만 바꿔도 파일 해시가 달라지므로 이미 전달한 버전의 파일은 수정하지 않습니다. 새 버전은 전체 저장 성공 뒤 활성화하며, 실패하면 기존 활성 버전을 유지합니다. 이전 버전은 삭제하지 않습니다. 이전 파일을 다시 지정하면 해당 버전으로 전환할 수 있습니다.
+
+```sh
+java -jar backend/target/backend-0.1.0-SNAPSHOT.jar \
+  --app.catalog.enabled=true \
+  --app.catalog.path=/absolute/path/catalog.json
+```
+
+위 실행에는 PostgreSQL 연결 설정이 필요합니다. 적재 이후에는 `app.catalog.enabled=false`로 실행해도 DB에 저장된 자료를 조회할 수 있습니다. 파일을 교체하는 것만으로 실행 중인 DB를 변경하지 않습니다. 경로·파일·내용이 잘못되거나 DB 적재가 실패하면 앱 시작을 거부하며, 빈 데이터로 대체하지 않습니다.
+
+테이블, 조회 SQL, PostgreSQL 테스트와 볼륨 보존 확인은 [DB 운영 안내](catalog-database.md)를 참고합니다. Docker의 읽기 전용 파일 연결은 Issue #29 범위입니다. 적재 성공은 원자료의 최신 판매 여부나 추천 적합성 확인을 뜻하지 않습니다.
 
 ## 검증
 
@@ -128,3 +151,5 @@ sh mvnw -B -ntp verify
 ```
 
 카탈로그 테스트는 정상 로딩, 미확인 값, ID 중복·잘못된 참조, 가격·좌표 경계, 출처·판매 확인 모순, JSON 타입·날짜·필드 오류와 불변성을 확인합니다. 기존 Spring Context와 health 테스트도 함께 실행합니다. 외부 페이지 접근과 실제 자료의 최신성은 이 테스트 범위가 아닙니다.
+
+DB 테스트는 중복 방지·버전 충돌·원자적 교체·SQL 실패 롤백·동시 적재·DB 직접 조회를 확인합니다. `-Ppostgres` 프로필은 같은 계약을 실제 PostgreSQL에서도 검증합니다. 실행 절차는 DB 운영 안내에 있습니다.
