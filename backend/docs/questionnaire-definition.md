@@ -12,7 +12,24 @@
 - `version`은 필수 문자열이고 `questions`는 비어 있지 않은 배열이다. 각 문항은 고유 ID, 문구, `single` 또는 `multiple` 타입, 최소·최대 선택 개수, 비어 있지 않은 선택지 배열을 가진다. 선택지 ID는 해당 문항 안에서 고유하다.
 - 표시 순서는 배열 순서다. 오류가 나면 임의 문항으로 대체하지 않고 JSON 필드 경로를 포함한 예외를 반환한다.
 
-[예시 JSON](../src/test/resources/questionnaire/questionnaire-example.json)은 형식 검토용 가상 문항이다. 실제 설문 문항·선택지·버전은 팀 확정 후 별도 파일로 공급해야 한다. 이 예시를 실제 추천 입력으로 사용하지 않는다.
+아래 JSON은 형식 검토용 가상 문항이다. 실제 설문 문항·선택지·버전은 팀 확정 후 별도 파일로 공급해야 한다. 이 예시를 실제 추천 입력으로 사용하지 않는다.
+
+```json
+{
+  "version": "review-example-v1",
+  "questions": [{
+    "id": "example-drink",
+    "label": "[가상 예시] 어떤 음료를 고르시겠어요?",
+    "type": "single",
+    "minSelections": 1,
+    "maxSelections": 1,
+    "options": [
+      {"id": "coffee", "label": "커피"},
+      {"id": "tea", "label": "차"}
+    ]
+  }]
+}
+```
 
 ```sh
 java -jar backend/target/backend-0.1.0-SNAPSHOT.jar \

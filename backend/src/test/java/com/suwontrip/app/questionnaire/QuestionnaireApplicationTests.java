@@ -7,7 +7,6 @@ import org.springframework.boot.test.context.ConfigDataApplicationContextInitial
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -35,7 +34,7 @@ class QuestionnaireApplicationTests {
             assertThat(context).hasSingleBean(QuestionnaireDefinition.class);
             assertThat(context).hasSingleBean(QuestionnaireController.class);
             assertThat(context.getBean(QuestionnaireDefinition.class).version())
-                    .isEqualTo("review-example-v1");
+                    .isEqualTo("test-only-v1");
 
             MockMvcBuilders.webAppContextSetup(context).build()
                     .perform(get("/api/v1/preference-questionnaire"))
@@ -59,13 +58,9 @@ class QuestionnaireApplicationTests {
     }
 
     private Path fixture() throws Exception {
-        Path file = directory.resolve("questionnaire-example.json");
-        try (InputStream input = getClass().getResourceAsStream(
-                "/questionnaire/questionnaire-example.json"
-        )) {
-            assertThat(input).isNotNull();
-            Files.copy(input, file);
-        }
-        return file;
+        return Files.writeString(
+                directory.resolve("questionnaire-example.json"),
+                QuestionnaireDefinitionTests.JSON
+        );
     }
 }
