@@ -35,9 +35,11 @@ cd haenggung-2026-11-18.2
 sha256sum -c SHA256SUMS
 ```
 
+위 해시 명령은 WSL·Linux 기준이다. macOS에서는 `shasum -a 256`과 `shasum -a 256 -c SHA256SUMS`, Windows PowerShell에서는 `Get-FileHash -Algorithm SHA256`으로 같은 값을 확인한다. 두 환경 모두 `tar -xzf`로 압축을 풀 수 있다. 호스트의 파일 경로를 Docker 컨테이너 내부 경로로 그대로 넘기지 않는다.
+
 이 버전의 `manifest.json`에는 `catalogSha256=77101fe31346de40225d23adca5a485f74cb4861e98a9a8e9d1cf7474ab4eb0d`, 카페 320곳, 입력 메뉴 5,011건이 기록되어 있다. `catalog.json`의 `dataVersion`도 묶음 이름과 일치해야 한다. 체크섬을 통과해도 로더 검증을 생략하지 않는다. #22 로더로 스키마·참조를 검사하고, #24가 병합된 뒤에는 `APP_CATALOG_ENABLED=true`, `APP_CATALOG_PATH`를 지정해 시작 시 로딩한다. 새 버전은 별도 폴더에 풀어 검증한 뒤 경로를 바꾸고 재시작한다. 문제가 있으면 이전 버전의 경로로 되돌린다.
 
-현재 Compose에는 JSON 파일 마운트나 카탈로그 DB 적재가 없다. PostgreSQL의 `postgres_data` 볼륨은 DB 파일을 지속시키지만 JSON을 자동으로 적재하지 않는다. 팀 시연에서 실제 자료를 컨테이너에 공급하려면 읽기 전용 파일 마운트·경로 설정, 또는 PostgreSQL로의 버전별 적재를 후속 Issue에서 구현해야 한다. 재시작·중복·실패 시 롤백을 고려하면 **JSON을 검증된 전달 원본으로 두고 PostgreSQL을 조회 저장소로 사용하는 방향**을 검토한다. 이 문서는 DB 스키마나 자동 적재 동작을 확정하지 않는다.
+현재 Compose에는 JSON 파일 마운트나 카탈로그 DB 적재가 없다. PostgreSQL의 `postgres_data` 볼륨은 DB 파일을 지속시키지만 JSON을 자동으로 적재하지 않는다. 팀 시연에서 실제 자료를 컨테이너에 공급하려면 읽기 전용 파일 마운트·경로 설정, 또는 PostgreSQL로의 버전별 적재를 후속 Issue에서 구현해야 한다. 프론트 Nginx도 현재 `/api/health`만 백엔드로 연결하므로 기능 API 프록시는 별도 작업이다. 재시작·중복·실패 시 롤백을 고려하면 **JSON을 검증된 전달 원본으로 두고 PostgreSQL을 조회 저장소로 사용하는 방향**을 검토한다. 이 문서는 DB 스키마나 자동 적재 동작을 확정하지 않는다.
 
 ## 2. 추천 후보 판정
 
