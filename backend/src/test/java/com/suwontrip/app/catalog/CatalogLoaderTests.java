@@ -27,6 +27,17 @@ class CatalogLoaderTests {
     private final CatalogLoader loader = CatalogTestData.loader();
 
     @Test
+    void validatesUtf8DocumentsWithoutReopeningTheSourceFile() {
+        var loader = CatalogTestData.loader();
+        byte[] bytes = CatalogTestData.JSON.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        assertThat(loader.load(bytes).menus()).hasSize(1);
+        byte[] invalid = CatalogTestData.JSON.replace("cafe-test-001", "invalid cafe id")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> loader.load(invalid))
+                .isInstanceOf(CatalogLoadException.class);
+    }
+
+    @Test
     void loadsVersionedCatalogWithoutTurningUnknownValuesIntoFacts() throws Exception {
         Catalog catalog = loader.load(CatalogTestData.write(directory, CatalogTestData.document()));
 
