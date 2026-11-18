@@ -1,0 +1,28 @@
+{
+  "version": "review-example-v1",
+  "questions": [
+    {
+      "id": "example-drink",
+      "label": "[가상 예시] 어떤 음료를 고르시겠어요?",
+      "type": "single",
+      "minSelections": 1,
+      "maxSelections": 1,
+      "options": [
+        {"id": "coffee", "label": "커피"},
+        {"id": "tea", "label": "차"}
+      ]
+    },
+    {
+      "id": "example-dessert",
+      "label": "[가상 예시] 관심 있는 디저트를 골라주세요.",
+      "type": "multiple",
+      "minSelections": 0,
+      "maxSelections": 2,
+      "options": [
+        {"id": "cake", "label": "케이크"},
+        {"id": "cookie", "label": "쿠키"},
+        {"id": "bread", "label": "빵"}
+      ]
+    }
+  ]
+}
