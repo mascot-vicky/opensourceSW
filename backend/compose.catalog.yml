@@ -5,7 +5,7 @@ services:
       APP_CATALOG_PATH: /app/data/catalog.json
     volumes:
       - type: bind
-        source: ${CATALOG_FILE:?Set CATALOG_FILE to an absolute path to catalog.json}
+        source: ${CATALOG_FILE:-./backend/data/catalog/haenggung-2026-11-18.2/catalog.json}
         target: /app/data/catalog.json
         read_only: true
         bind:

@@ -1,82 +1,73 @@
-# Docker Compose에서 외부 카탈로그 사용
+# Docker Compose에서 저장소 카탈로그 사용
 
-관련 작업: [Issue #29](https://github.com/seoJing/opensourceSW/issues/29) · 선행 코드: [PR #23](https://github.com/seoJing/opensourceSW/pull/23), [Issue #24](https://github.com/seoJing/opensourceSW/issues/24)
+관련 작업: [Issue #29](https://github.com/seoJing/opensourceSW/issues/29) · 선행 코드: [PR #23](https://github.com/seoJing/opensourceSW/pull/23), [PR #31](https://github.com/seoJing/opensourceSW/pull/31)
 
-기본 `docker compose up`은 파일 적재 없이 기존 세 서비스를 실행한다. #24의 DB 구현이 포함되면 이미 적재된 카탈로그는 DB에서 계속 조회할 수 있다. 실제 카탈로그가 필요한 시연에서만 저장소 루트의 `docker-compose.yml`에 `backend/compose.catalog.yml`을 더한다. 확장 파일은 서비스 수를 늘리지 않고 백엔드에 외부 JSON을 **읽기 전용**으로 연결한다. 확장 파일은 적재 원본을 공급하고, 실제 PostgreSQL 저장은 #24의 시작 실행기가 담당한다. HTTP API는 별도 작업이다.
+처음 환경을 받는 팀원은 [작업 착수 안내 HTML](team-getting-started.html)을 따른다. 아래 절차는 #23 → #31 → #30이 main에 병합된 뒤 사용할 수 있다. 병합 전 main만으로는 실제 카탈로그를 적재할 수 없다.
 
-실행자는 자신의 PC에서 파일 경로를 지정한다. 특정 사용자 계정, 공유 서비스나 원격 PC 접근을 전제로 하지 않는다. 이 문서의 목적은 다른 사용자가 실행할 수 있는 설정·절차를 제공하는 것이다.
+## 포함한 고정 데이터
 
-## 준비
+`backend/data/catalog/haenggung-2026-11-18.2/`의 `catalog.json`, `manifest.json`, `SHA256SUMS`를 코드와 함께 관리한다. 압축파일 별도 전달이나 재수집은 필요하지 않다. JSON은 약 2.6MB이며 동일 내용을 압축파일로 중복 커밋하지 않는다. 현재 데이터는 카페 320곳·메뉴 5,011건이다.
 
-1. Docker Engine과 Compose v2 또는 Docker Desktop을 준비하고 `docker compose version`, `docker info`로 확인한다. 저장소 루트에서 실행하며 3000·8080 포트를 사용할 수 있어야 한다. 호스트 Java·Maven 설치는 필요하지 않다.
-2. 버전별 묶음을 [전달 절차 PR #28](https://github.com/seoJing/opensourceSW/pull/28)에 따라 풀고 SHA-256, `dataVersion`, 카페·메뉴 수를 확인한다. 전달 매체는 실행자가 선택한다.
-3. `catalog.json`의 절대 경로를 확인한다. 파일은 백엔드 컨테이너의 비루트 사용자도 읽을 수 있어야 한다. 파일·개인 경로는 Git에 커밋하지 않는다.
-4. PR #23의 로더와 Issue #24의 PostgreSQL 적재 코드가 실행할 브랜치에 있어야 한다. 둘 중 하나가 없으면 카탈로그 기능을 확인할 수 없다.
+상호·주소·좌표는 NAVER API HUB 지역 검색과 지도 목록 대조, 메뉴명·표시 가격·설명은 공개 지도 메뉴 페이지의 구조화 데이터에서 확인했다. 관찰일은 2026-11-18이며 항목별 출처 URL·외부 ID·관찰일을 JSON에 보존한다. 원문 수집 로그·스크립트·자격 증명·세션은 포함하지 않는다. API 호출이나 LLM 없이 기존 자료를 재현한다.
 
-WSL·Linux·macOS 셸에서는 저장소 루트에서 실행한다. 예시 절대 경로를 자신의 파일 위치로 바꾸고, 공백이 있는 경로도 따옴표 안에 넣는다.
+고정 입력의 스키마는 `schemaVersion=1`이다. `manifest.json`은 수집 범위·누락값·해시를 기록한다. 메뉴 4,971건은 `UNKNOWN`, 40건은 `SEASON_ENDED`이며 가격 227건·설명 2,275건은 미확인이다. 전체 업소의 완전한 명부나 전체 메뉴의 추천 적합성은 보장하지 않는다. 원본을 같은 버전으로 재저장하거나 줄바꿈을 바꾸지 않는다. 다른 데이터는 새 `dataVersion`을 사용한다.
+
+## 실행
+
+Git과 Docker Engine/Compose 또는 Docker Desktop이 필요하다. 호스트에 Java·Maven·PostgreSQL을 설치하지 않아도 된다. 저장소 루트에서 실행하고 3000·8080 포트를 사용할 수 있어야 한다. 한 PC의 여러 체크아웃은 같은 포트·기존 DB 볼륨을 공유하므로 한 세트만 실행한다.
+
+확장 Compose의 기본 입력은 저장소 상대 경로다. `CATALOG_FILE`을 이전에 설정했다면 셸과 `.env`에서 제거해야 기본 파일을 사용한다. WSL·Linux에서는 `unset CATALOG_FILE`, PowerShell에서는 `Remove-Item Env:CATALOG_FILE -ErrorAction SilentlyContinue`로 셸 변수를 제거할 수 있다.
 
 ```sh
-export CATALOG_FILE="/absolute/path/haenggung-2026-11-18.2/catalog.json"
-test -f "$CATALOG_FILE" && test -r "$CATALOG_FILE" &&
-  docker compose -f docker-compose.yml -f backend/compose.catalog.yml config --quiet &&
-  docker compose -f docker-compose.yml -f backend/compose.catalog.yml up --build -d
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.catalog.yml config --quiet
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.catalog.yml up --build -d --wait
+docker compose -p opensourcesw ps
+docker compose -p opensourcesw logs --tail=100 backend
 ```
 
-Windows PowerShell에서는 같은 저장소 루트에서 실행한다.
+설정 검사나 실행이 실패하면 다음 단계로 진행하지 않는다. PowerShell 명령별 오류 확인 예시는 HTML 안내서에 있다. `CATALOG_FILE`을 지정하지 않아도 기본 파일을 사용하며, 지정한 파일이 없으면 디렉터리로 자동 생성하지 않고 실패한다. 파일은 `/app/data/catalog.json`에 읽기 전용으로 연결된다. 적재 성공 뒤 조회의 기준은 PostgreSQL이며 전체 카탈로그를 메모리 Bean으로 유지하지 않는다.
+
+최초 적재 로그는 `Catalog stored in database: cafes=320, menus=5011, inserted=true`다. 같은 버전·같은 바이트를 다시 읽으면 `inserted=false`이며 중복 저장하지 않는다. 같은 버전의 다른 바이트는 거부한다. 수량은 전달된 manifest와 대조하며 애플리케이션에 고정된 값이 아니다.
+
+```sh
+docker compose -p opensourcesw exec -T db psql -U suwon_app -d suwon_trip -c "SELECT data_version, cafe_count, menu_count, source_sha256 FROM catalog_dataset JOIN catalog_active USING (data_version);"
+docker compose -p opensourcesw exec -T db psql -U suwon_app -d suwon_trip -c "SELECT COUNT(*) FROM catalog_cafe JOIN catalog_active USING (data_version); SELECT COUNT(*) FROM catalog_menu JOIN catalog_active USING (data_version);"
+```
+
+DB 사용자·이름을 바꿨다면 `-U`, `-d`도 맞춘다. 브라우저에서 `http://localhost:3000/api/health`의 최상위 status와 components.db.status가 모두 UP인지 확인한다. 기본 화면은 상태 확인용이며 카탈로그 HTTP API·추천 화면·프론트 `/api/v1` 프록시는 별도 작업이다.
+
+## 다른 버전의 파일 사용
+
+저장소 기본 입력 대신 다른 파일을 사용할 때만 `CATALOG_FILE`에 절대 경로를 지정한다. WSL에서는 WSL 경로, PowerShell에서는 Windows 경로를 사용한다. 파일과 상위 폴더는 컨테이너의 비루트 사용자가 읽을 수 있어야 한다.
+
+```sh
+export CATALOG_FILE="/absolute/path/new-version/catalog.json"
+```
 
 ```powershell
-$catalogInput = Get-Item -LiteralPath 'C:\path\to\haenggung-2026-11-18.2\catalog.json' -ErrorAction Stop
+$catalogInput = Get-Item -LiteralPath 'C:\path\new-version\catalog.json' -ErrorAction Stop
 if ($catalogInput.PSIsContainer) { throw 'catalog.json 파일을 지정하세요.' }
 $env:CATALOG_FILE = $catalogInput.FullName
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml config --quiet
-if ($LASTEXITCODE -ne 0) { throw 'Compose 설정 검사가 실패했습니다.' }
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml up --build -d
 ```
 
-`CATALOG_FILE`을 설정하지 않으면 확장 Compose 설정 자체가 실패한다. 파일이 없거나 JSON이 잘못되면 백엔드가 시작에 실패해야 한다. Compose의 파일 경로는 **호스트 경로**이며, 애플리케이션의 `APP_CATALOG_PATH=/app/data/catalog.json`은 **컨테이너 내부 경로**다. 두 값을 바꿔 쓰지 않는다.
-
-WSL에서 실행할 때는 WSL 경로를 사용하고 Docker Desktop의 해당 배포판 통합을 활성화한다. Windows PowerShell에서는 Windows 경로를 사용한다. Docker Desktop의 파일 공유·읽기 권한도 해당 경로를 허용해야 한다.
-
-## 실행 확인과 종료
+새 버전은 해시와 스키마를 검증한 뒤 설정을 검사하고 백엔드를 다시 생성한다. 단순 restart는 바뀐 파일 경로를 적용하지 않는다. 이전 버전으로 전환할 때도 해당 원본을 지정하고 같은 절차를 사용한다. DB의 이전 버전은 보존한다.
 
 ```sh
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml ps
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml logs backend
-curl -fsS http://localhost:3000/api/health
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.catalog.yml config --quiet
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.catalog.yml up -d --no-deps --force-recreate --wait backend
 ```
 
-Windows PowerShell의 health 조회는 `Invoke-RestMethod http://localhost:3000/api/health`를 사용한다.
+## 적재 후 일반 실행과 종료
 
-세 서비스가 healthy이고 백엔드 로그에 `Catalog stored in database: cafes=320, menus=5011, inserted=true`이 있어야 최초 적재를 확인할 수 있다. 같은 버전을 다시 지정하면 `inserted=false`이며 중복 저장하지 않는다. DB의 활성 버전과 실제 행 수도 함께 확인한다. `GET /api/health`는 프론트에서 백엔드·DB 연결을 확인한다. 현재 카탈로그 조회 HTTP API와 프론트 `/api/v1` 프록시는 별도 작업이므로 health 성공만으로 메뉴 화면 연동을 주장하지 않는다.
-
-로그의 건수는 전달받은 `manifest.json`과 대조한다. 위의 320곳·5,011건은 `haenggung-2026-11-18.2`의 예시이며 코드에 고정된 수량이 아니다. `postgres_data` 볼륨(실제 이름 `suwon_trip_postgres_data`)은 #24가 적재한 카페·메뉴와 데이터 버전까지 보존한다. 같은 버전의 다른 파일 내용은 거부하므로, JSON을 수정하면 새 `dataVersion`을 사용해야 한다.
-
-새 버전은 별도 폴더에 검증한 뒤 `CATALOG_FILE`을 새 파일로 바꾸고 아래 명령으로 백엔드를 다시 생성한다. 단순 `restart`는 변경된 호스트 파일 경로를 적용하지 않는다. 이전 버전으로 되돌릴 때도 경로를 바꾼 뒤 같은 명령을 사용한다. 적재 로그·DB 활성 버전·health를 다시 확인한다. 이전 버전의 행은 보존하며 원본을 다시 지정하면 활성 버전만 전환한다.
+적재 후 JSON 없이 DB만 사용하는 실행은 아래와 같다. 기본 Compose로 컨테이너를 다시 생성하면 파일 연결과 적재 환경변수가 제거된다. 명령마다 같은 프로젝트 이름 `opensourcesw`를 유지한다.
 
 ```sh
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml up -d --no-deps --force-recreate backend
+docker compose -p opensourcesw -f docker-compose.yml up -d --force-recreate --wait
+docker compose -p opensourcesw -f docker-compose.yml down
 ```
 
-적재한 뒤 원본 파일 없이 DB만 사용하는 실행은 아래와 같다. 기본 Compose로 다시 생성하면 파일 마운트와 적재 환경변수가 제거된다.
+일반 down은 DB named volume `suwon_trip_postgres_data`를 보존한다. `down -v`는 사용하지 않는다. 다른 PC에는 별도의 볼륨이 있으므로 그 PC 최초 실행은 확장 Compose로 적재한다. 기본 `docker compose up`은 빈 DB에 카탈로그를 자동 적재하지 않는다.
 
-```sh
-docker compose -f docker-compose.yml up -d --force-recreate --wait
-docker compose exec -T db psql -U suwon_app -d suwon_trip -c "SELECT data_version, cafe_count, menu_count FROM catalog_dataset JOIN catalog_active USING (data_version);"
-docker compose exec -T db psql -U suwon_app -d suwon_trip -c "SELECT COUNT(*) FROM catalog_cafe JOIN catalog_active USING (data_version); SELECT COUNT(*) FROM catalog_menu JOIN catalog_active USING (data_version);"
-```
+## 검증 범위
 
-DB 사용자·이름을 바꿨다면 `-U`, `-d`도 바꾼다. 다른 PC의 Docker 볼륨은 별개이므로 최초에는 원본 파일로 적재해야 한다.
-
-종료는 `CATALOG_FILE`이 설정된 셸에서 실행한다.
-
-```sh
-docker compose -f docker-compose.yml -f backend/compose.catalog.yml down
-```
-
-`down`은 컨테이너를 중지·제거하며 named volume은 유지한다. `down -v`는 사용하지 않는다.
-
-## 확인 범위
-
-2026-11-18 로컬 Docker에서 #24의 PostgreSQL 구현과 이 확장 파일을 함께 실행했다. 이미지 빌드, 카페 320곳·메뉴 5,011건 적재, 원본과 DB의 모든 필드 대조, 세 서비스 health와 프론트 `/api/health`를 확인했다. 이후 기본 Compose만으로 세 컨테이너를 재생성하여 JSON 마운트·적재 설정이 없는 상태에서도 같은 DB 볼륨과 전체 데이터가 유지되는 것을 확인했다.
-
-일반 경로·공백이 있는 경로의 설정 해석과 필수 변수 누락 오류도 확인했다. 다른 PC 자체를 직접 검증한 것은 아니며, CI의 기본 Compose smoke test에는 실제 외부 자료와 이 확장 파일이 포함되지 않는다. 특정 PC 접근이나 전달 장소 확정을 이번 구성 작업의 완료 조건으로 두지 않는다.
+기존 통합 로컬 검증에서 이미지 빌드·카페 320곳·메뉴 5,011건 적재·원본 전체 필드 대조·JSON 없는 재생성 후 데이터 보존과 세 서비스 health를 확인했다. 저장소 기본 입력으로 바꾼 이번 검증은 PR #30의 검증 결과에 기록한다. 다른 팀원 PC 자체의 실행은 아직 확인하지 않았다. 기본 CI smoke는 선택형 카탈로그 적재를 실행하지 않는다.
