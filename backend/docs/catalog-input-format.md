@@ -119,7 +119,7 @@ Catalog catalog = new CatalogLoader().load(Path.of("/path/to/catalog.json"));
 
 파일 읽기, JSON 파싱, 자료 검증에 실패하면 `CatalogLoadException`을 던집니다. `getFieldPath()`는 `$.menus[0].cafeId` 같은 오류 위치를 반환합니다. 파일 전체 오류는 `$`로 표시하며 읽기·파싱 실패의 원인 예외를 보존합니다. 임의 기본 자료나 빈 카탈로그로 대체하지 않습니다.
 
-기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 파일 로더는 기존 Jackson을 사용하며, DB 마이그레이션은 Flyway를 사용합니다. 실제 운영 데이터 파일은 커밋하지 않습니다.
+기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 파일 로더는 기존 Jackson을 사용하며, DB 마이그레이션은 Flyway를 사용합니다. 학습 MVP의 고정 재현 입력은 PR #30의 `backend/data/catalog/`에서 버전별로 관리합니다. 비밀정보와 수집 원문 로그는 포함하지 않습니다.
 
 ## 시작 시 PostgreSQL 적재 — Issue #24
 

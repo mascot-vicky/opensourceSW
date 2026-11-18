@@ -33,15 +33,14 @@ JSON은 배포·재적재 원본이며, 실행 중 조회의 기준은 PostgreSQ
 
 ## Docker에서 시작·확인
 
-PR #23·#24 구현과 #29의 `backend/compose.catalog.yml`이 모두 포함된 코드에서 저장소 루트 기준으로 실행합니다. 실제 데이터 묶음은 별도 전달하며 소스 저장소에 포함하지 않습니다.
+PR #23·#24 구현과 #29의 `backend/compose.catalog.yml`이 모두 포함된 코드에서 저장소 루트 기준으로 실행합니다. 실제 고정 입력은 PR #30의 `backend/data/catalog/haenggung-2026-11-18.2/`에 포함합니다. 별도 파일 전달·재수집 없이 저장소 안의 JSON을 기본으로 사용합니다.
 
 ```sh
-export CATALOG_FILE="/absolute/path/haenggung-2026-11-18.2/catalog.json"
 docker compose -f docker-compose.yml -f backend/compose.catalog.yml config --quiet
 docker compose -f docker-compose.yml -f backend/compose.catalog.yml up --build -d --wait
 ```
 
-Windows PowerShell은 `$env:CATALOG_FILE = 'C:\path\to\catalog.json'`으로 경로를 지정하고 같은 Docker 명령을 사용합니다. 파일을 읽을 수 있어야 합니다. 로그의 `Catalog stored in database`와 실제 DB를 함께 확인합니다.
+Windows PowerShell에서도 같은 Docker 명령을 사용합니다. 다른 버전만 `CATALOG_FILE` 절대 경로로 지정합니다. 이전 셸·`.env`의 경로를 해제하면 저장소 기본 입력을 사용합니다. 로그의 `Catalog stored in database`와 실제 DB를 함께 확인합니다.
 
 ```sh
 docker compose exec -T db psql -U suwon_app -d suwon_trip -c "SELECT data_version, cafe_count, menu_count, source_sha256 FROM catalog_dataset JOIN catalog_active USING (data_version);"
@@ -55,7 +54,7 @@ DB 사용자·이름을 변경했다면 `-U`, `-d`도 바꿉니다. 적재한 �
 docker compose -f docker-compose.yml up -d --force-recreate --wait
 ```
 
-기본 Compose의 named volume `suwon_trip_postgres_data`가 PostgreSQL 데이터를 보관합니다. 이 볼륨 이름은 저장소의 기존 설정이며 다른 작업 폴더도 공유하므로 동시에 서로 다른 버전을 띄우지 않습니다. `down`·컨테이너 재생성은 데이터를 지우지 않지만 `down -v`는 삭제합니다. Docker 볼륨은 PC마다 따로 있으므로 다른 PC 최초 실행에는 원본 묶음과 적재 과정이 필요합니다.
+기본 Compose의 named volume `suwon_trip_postgres_data`가 PostgreSQL 데이터를 보관합니다. 이 볼륨 이름은 저장소의 기존 설정이며 다른 작업 폴더도 공유하므로 동시에 서로 다른 버전을 띄우지 않습니다. `down`·컨테이너 재생성은 데이터를 지우지 않지만 `down -v`는 삭제합니다. Docker 볼륨은 PC마다 따로 있으므로 다른 PC 최초 실행에는 저장소의 고정 입력으로 적재하는 과정이 필요합니다.
 
 ## 검증 명령
 
