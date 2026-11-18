@@ -117,7 +117,24 @@ Catalog catalog = new CatalogLoader().load(Path.of("/path/to/catalog.json"));
 
 파일 읽기, JSON 파싱, 자료 검증에 실패하면 `CatalogLoadException`을 던집니다. `getFieldPath()`는 `$.menus[0].cafeId` 같은 오류 위치를 반환합니다. 파일 전체 오류는 `$`로 표시하며 읽기·파싱 실패의 원인 예외를 보존합니다. 임의 기본 자료나 빈 카탈로그로 대체하지 않습니다.
 
-기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 새 의존성·Spring Bean·시작 설정·운영 데이터 파일을 추가하지 않습니다. API 연결 단계에서 검토된 실제 파일 위치와 초기화 실패 처리를 정합니다.
+기존 HTTP용 `ObjectMapper`를 변경하지 않고 로더 전용 파서를 사용합니다. 새 의존성·운영 데이터 파일을 추가하지 않습니다.
+
+## 시작 시 외부 파일 로딩 — Issue #24
+
+| 설정 | 동작 |
+| --- | --- |
+| `app.catalog.enabled` | 명시적으로 `true`인 경우에만 로딩합니다. 생략하거나 `false`이면 카탈로그 Bean을 만들지 않습니다. |
+| `app.catalog.path` | 활성화 시 필수인 로컬 JSON 파일 경로입니다. URL이나 classpath 위치는 지원하지 않습니다. |
+
+환경변수는 `APP_CATALOG_ENABLED`, `APP_CATALOG_PATH`입니다. 애플리케이션이 시작할 때 파일을 한 번 읽고 검증한 뒤 불변 `Catalog` Bean으로 제공합니다. 파일을 교체해도 실행 중인 Bean은 바뀌지 않으므로 재시작해야 합니다. 활성화한 상태에서 경로가 없거나 파일·내용이 잘못되면 시작을 거부합니다. 전역 지연 초기화가 활성화돼도 이 검사는 시작 시 실행합니다.
+
+```sh
+java -jar backend/target/backend-0.1.0-SNAPSHOT.jar \
+  --app.catalog.enabled=true \
+  --app.catalog.path=/absolute/path/catalog.json
+```
+
+이 경로는 서버 프로세스가 읽을 수 있어야 합니다. Docker에서는 컨테이너 내부 경로를 지정하고 파일을 별도로 연결해야 합니다. 실제 자료의 팀 전달·파일 연결 방식은 이 Issue에 포함하지 않습니다. 시작 성공은 형식·참조 검증 결과이며 현재 판매 상태나 추천 적합성의 확인은 아닙니다.
 
 ## 검증
 
