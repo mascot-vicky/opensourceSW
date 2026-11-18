@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.type.LogicalType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
@@ -60,8 +59,17 @@ public final class CatalogLoader {
 
     public Catalog load(Path path) {
         Objects.requireNonNull(path, "path");
-        try (InputStream input = Files.newInputStream(path)) {
-            Catalog catalog = reader.readValue(input);
+        try {
+            return load(Files.readAllBytes(path));
+        } catch (IOException exception) {
+            throw new CatalogLoadException("$", "cannot read catalog file: " + path, exception);
+        }
+    }
+
+    public Catalog load(byte[] document) {
+        Objects.requireNonNull(document, "document");
+        try {
+            Catalog catalog = reader.readValue(document);
             validator.validate(catalog);
             return catalog;
         } catch (JsonMappingException exception) {
@@ -69,7 +77,7 @@ public final class CatalogLoader {
         } catch (JsonProcessingException exception) {
             throw new CatalogLoadException("$", "invalid JSON document", exception);
         } catch (IOException exception) {
-            throw new CatalogLoadException("$", "cannot read catalog file: " + path, exception);
+            throw new CatalogLoadException("$", "cannot parse catalog document", exception);
         }
     }
 
