@@ -3,13 +3,13 @@
     "AGENTS.md", "AGENT.md", "CONTRIBUTING.md", ".editorconfig", ".gitattributes",
     ".gitignore", "docker-compose.yml", ".env.example",
     "frontend/package.json", "frontend/pnpm-lock.yaml", "frontend/vite.config.js", "frontend/tsconfig.json",
-    "frontend/eslint.config.js", "frontend/nginx.conf", "frontend/seed-design.json", "frontend/src/app/main.tsx",
+    "frontend/eslint.config.js", "frontend/nginx.conf", "frontend/index.html", "frontend/seed-design.json", "frontend/src/app/main.tsx",
     "frontend/src/app/App.tsx", "frontend/src/app/styles/global.css", "frontend/src/test/setup.ts",
     "backend/pom.xml", "backend/mvnw", "backend/mvnw.cmd",
     "backend/src/main/java/com/suwontrip/app/SuwonTripApplication.java"
   ],
   "sharedPrefixes": [
-    ".github/", ".agent/skills/", ".agents/skills/", "frontend/src/shared/ui/", "scripts/", "backend/.mvn/", "backend/src/main/resources/",
+    ".github/", ".agent/skills/", ".agents/skills/", "frontend/src/shared/ui/", "frontend/public/maps/", "scripts/", "backend/.mvn/", "backend/src/main/resources/",
     "backend/src/test/resources/", "database/"
   ],
   "sharedBasenames": ["Dockerfile", ".dockerignore", "AGENTS.md"],

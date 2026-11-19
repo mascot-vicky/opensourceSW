@@ -2,7 +2,7 @@
 
 관련 작업: [Issue #34](https://github.com/seoJing/opensourceSW/issues/34)
 
-React·TypeScript·Vite·pnpm 기반 프론트에 SEED를 적용합니다. 현재 적용 화면은 개발 환경 상태 화면이며 로그인·설문·메뉴·카페 화면과 업무 API를 추가하지 않습니다.
+React·TypeScript·Vite·pnpm 기반 프론트에 SEED를 적용합니다. 기반 적용은 Issue #34의 상태 화면이며, Issue #36에서 상수 mock 기반 시연 화면으로 확장했습니다. [시연 안내](demo.md)의 범위와 추가 의존성·스니펫 변경 기록을 함께 확인합니다. 업무 API를 추가하지 않습니다.
 
 ## 의존성과 선택 이유
 
@@ -14,7 +14,7 @@ React·TypeScript·Vite·pnpm 기반 프론트에 SEED를 적용합니다. 현�
 | `@seed-design/cli` | 1.7.4 | 스니펫 추가·호환성 확인. 개발 의존성 |
 | `@juggle/resize-observer` | 3.4.0 | jsdom에 없는 ResizeObserver의 테스트 전용 polyfill |
 
-직접 CSS로 공통 UI를 구현하는 대안은 컴포넌트 상태·접근성·시각 규칙을 팀이 각각 관리해야 합니다. SEED는 이번 사용자의 선택이며, 공식 React 패키지와 토큰을 함께 사용해 그 관리 범위를 줄입니다. CLI도 고정해 팀원이 같은 명령으로 스니펫을 관리하도록 합니다. Tailwind·Stackflow·Storybook·다른 UI 라이브러리는 이번에 추가하지 않습니다.
+직접 CSS로 공통 UI를 구현하는 대안은 컴포넌트 상태·접근성·시각 규칙을 팀이 각각 관리해야 합니다. SEED는 이번 사용자의 선택이며, 공식 React 패키지와 토큰을 함께 사용해 그 관리 범위를 줄입니다. CLI도 고정해 팀원이 같은 명령으로 스니펫을 관리하도록 합니다. Tailwind·Stackflow·Storybook은 도입하지 않습니다. 지도 표시용 Leaflet과 SEED 공식 아이콘은 Issue #36의 시연 범위에서 추가했습니다.
 
 React 패키지의 peer 범위는 React·React DOM 18 이상 및 SEED CSS `^3.3.0`입니다. 설치한 Vite 플러그인은 Vite 8과 CSS 3을 지원합니다. 기존 React 19·Vite 8 및 pnpm을 유지합니다. 설치는 `pnpm install --frozen-lockfile`을 사용합니다.
 

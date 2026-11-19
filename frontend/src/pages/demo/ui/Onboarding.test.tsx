@@ -1,0 +1,52 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { EntryFlow, Survey } from './Onboarding'
+
+describe('시연 진입과 설문', () => {
+  it('로그인은 빈 입력을 막고 입력 후 로컬 콜백만 실행한다', () => {
+    const onLogin = vi.fn()
+    render(<EntryFlow stage="login" onStage={vi.fn()} onLogin={onLogin} onStart={vi.fn()} />)
+    const submit = screen.getByRole('button', { name: '로그인' })
+    expect(submit).toBeDisabled()
+    fireEvent.change(screen.getByLabelText('아이디', { exact: true }), { target: { value: 'reviewer' } })
+    fireEvent.change(screen.getByLabelText('비밀번호', { exact: true }), { target: { value: 'local-only' } })
+    expect(submit).toBeEnabled()
+    fireEvent.click(submit)
+    expect(onLogin).toHaveBeenCalledOnce()
+    expect(screen.getByLabelText('비밀번호', { exact: true })).toHaveValue('')
+  })
+  it('선택 전 진행을 막고 이전 문항의 답변을 보존하며 5문항을 완료한다', () => {
+    const onComplete = vi.fn()
+    render(<Survey initialAnswers={{}} editing={false} onComplete={onComplete} onCancel={vi.fn()} />)
+    expect(screen.getByRole('button', { name: '다음' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('radio', { name: /커피/ }))
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /달콤한/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /고소한/ }))
+    expect(screen.getByRole('checkbox', { name: /산뜻한/ })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: '이전 단계' }))
+    expect(screen.getByRole('radio', { name: /커피/ })).toBeChecked()
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    expect(screen.getByRole('checkbox', { name: /달콤한/ })).toBeChecked()
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    fireEvent.click(screen.getByRole('radio', { name: /은은하게/ }))
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    fireEvent.click(screen.getByRole('radio', { name: /괜찮아요/ }))
+    fireEvent.click(screen.getByRole('button', { name: '다음' }))
+    fireEvent.click(screen.getByRole('radio', { name: /5,000원 이하/ }))
+    fireEvent.click(screen.getByRole('button', { name: '완료' }))
+    expect(onComplete).toHaveBeenCalledWith({ kind: ['coffee'], taste: ['sweet', 'nutty'], intensity: ['light'], caffeine: ['okay'], budget: ['low'] })
+  })
+  it('재설문 취소는 저장된 답변을 변경하지 않는다', () => {
+    const initialAnswers = { kind: ['tea'] }
+    const onCancel = vi.fn()
+    const onComplete = vi.fn()
+    render(<Survey initialAnswers={initialAnswers} editing onComplete={onComplete} onCancel={onCancel} />)
+    expect(screen.getByRole('radio', { name: /차/ })).toBeChecked()
+    fireEvent.click(screen.getByRole('radio', { name: /커피/ }))
+    fireEvent.click(screen.getByRole('button', { name: '취소' }))
+    expect(initialAnswers).toEqual({ kind: ['tea'] })
+    expect(onCancel).toHaveBeenCalledOnce()
+    expect(onComplete).not.toHaveBeenCalled()
+  })
+})

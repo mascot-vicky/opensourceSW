@@ -8,12 +8,18 @@ importers:
 
   .:
     dependencies:
+      '@karrotmarket/react-monochrome-icon':
+        specifier: 1.35.0
+        version: 1.35.0(@types/react@19.3.0)(react@19.3.1)
       '@seed-design/css':
         specifier: 3.3.0
         version: 3.3.0
       '@seed-design/react':
         specifier: 3.3.0
         version: 3.3.0(@seed-design/css@3.3.0)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(embla-carousel@8.6.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      leaflet:
+        specifier: 1.9.4
+        version: 1.9.4
       react:
         specifier: 19.3.1
         version: 19.3.1
@@ -39,6 +45,9 @@ importers:
       '@testing-library/react':
         specifier: 16.3.3
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@types/leaflet':
+        specifier: 1.9.21
+        version: 1.9.21
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -394,6 +403,12 @@ packages:
 
   '@juggle/resize-observer@3.4.0':
     resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
+
+  '@karrotmarket/react-monochrome-icon@1.35.0':
+    resolution: {integrity: sha512-Jpg/Y0mxcLAZ5ofa4+jJPu3k3THL8Lz49PGV4tZFSkVm2W60h2zbkQ+LoyFy3nEDAG9dCVdPXlxZVjU9vSCAiw==}
+    peerDependencies:
+      '@types/react': '*'
+      react: ^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc
 
   '@keyv/bigmap@1.3.1':
     resolution: {integrity: sha512-WbzE9sdmQtKy8vrNPa9BRnwZh5UF4s1KTmSK0KUVLo3eff5BlQNNWDnFOouNpKfPKDnms9xynJjsMYjMaT/aFQ==}
@@ -940,8 +955,14 @@ packages:
   '@types/estree@1.0.10':
     resolution: {integrity: sha512-lTyOMnOcmRBzdCv6/4zUZCrEhV0xrqQiUZBZtVcbmLHBXKLnN8q89v/wKRF/Q0HbwVsqbIG3o5HDoFl9sduM+g==}
 
+  '@types/geojson@7946.0.16':
+    resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+
+  '@types/leaflet@1.9.21':
+    resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
 
   '@types/react-dom@19.3.0':
     resolution: {integrity: sha512-ZI7bU42mZXXKHn/qNLEw2IrbiINU7X5+vfgdixBHkCNpYWXjKgfQ/P+uyGb5CjOLB9UcnTeg3rylQtV2hym44Q==}
@@ -1554,6 +1575,9 @@ packages:
 
   keyv@5.6.0:
     resolution: {integrity: sha512-CYDD3SOtsHtyXeEORYRx2qBtpDJFjRTGXUtmNEMGyzYOKj1TE3tycdlho7kA1Ufx9OYWZzg52QFBGALTirzDSw==}
+
+  leaflet@1.9.4:
+    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -2471,6 +2495,11 @@ snapshots:
 
   '@juggle/resize-observer@3.4.0': {}
 
+  '@karrotmarket/react-monochrome-icon@1.35.0(@types/react@19.3.0)(react@19.3.1)':
+    dependencies:
+      '@types/react': 19.3.0
+      react: 19.3.1
+
   '@keyv/bigmap@1.3.1(keyv@5.6.0)':
     dependencies:
       hashery: 1.5.1
@@ -3237,7 +3266,13 @@ snapshots:
 
   '@types/estree@1.0.10': {}
 
+  '@types/geojson@7946.0.16': {}
+
   '@types/json-schema@7.0.15': {}
+
+  '@types/leaflet@1.9.21':
+    dependencies:
+      '@types/geojson': 7946.0.16
 
   '@types/react-dom@19.3.0(@types/react@19.3.0)':
     dependencies:
@@ -3841,6 +3876,8 @@ snapshots:
   keyv@5.6.0:
     dependencies:
       '@keyv/serialize': 1.1.1
+
+  leaflet@1.9.4: {}
 
   levn@0.4.1:
     dependencies:
