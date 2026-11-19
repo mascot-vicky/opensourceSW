@@ -27,12 +27,15 @@ test('rename 이전 공통 경로와 삭제 파일도 검사한다', () => {
   assert.equal(prProblems(paths, '').length, 2)
 })
 
-test('SEED 설정·공통 UI·공유 AI 스킬 변경도 합의 대상으로 감지한다', () => {
+test('SEED 설정·공통 UI·공유 AI 스킬·공용 지도 변경도 합의 대상으로 감지한다', () => {
   const paths = [
     'frontend/seed-design.json',
     'frontend/src/shared/ui/index.ts',
     'frontend/src/shared/ui/seed-design/ui/action-button.tsx',
     '.agents/skills/seed-design/SKILL.md',
+    'frontend/index.html',
+    'frontend/public/maps/haenggung.svg',
+    'frontend/public/maps/README.md',
   ]
   assert.deepEqual(sharedFiles(paths), [...paths].sort())
   for (const path of paths) {

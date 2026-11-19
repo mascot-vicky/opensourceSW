@@ -1,6 +1,6 @@
 # 프론트엔드
 
-React·TypeScript·Vite와 SEED Design으로 만든 초기 상태 확인 화면입니다. 비즈니스 화면이나 외부 API 연동은 포함하지 않습니다.
+React·TypeScript·Vite와 SEED Design으로 만든 프론트엔드입니다. `/`는 상수 mock 기반 중간 발표 시연 화면, `/status`는 기존 연결 상태 확인 화면입니다. 업무 API 연동은 포함하지 않습니다.
 
 초기 구축 담당자는 폴더 구조·네이밍·공통 코드 사용법·테스트 작성법을 이 문서에 정리하고, 공통 진입점이나 설정이 바뀌면 `.github/harness-policy.json`의 감지 목록도 갱신합니다. 상세 인수인계와 공동 작업 규칙은 [공동 작업 가이드](../docs/collaboration.md)를 따릅니다.
 
@@ -44,3 +44,13 @@ pnpm dev
 - 팀 공유 공식 스킬은 [seed-design/SKILL.md](../.agents/skills/seed-design/SKILL.md)에 있습니다. Codex에서는 다음 턴부터 사용할 수 있고, 다른 도구에서는 이 링크로 읽습니다. [출처와 갱신 절차](../.agents/skills/seed-design/UPSTREAM.md)를 함께 유지합니다.
 
 의존성 선택 이유·토큰·접근성·스니펫 변경 기록·검증 방법은 [SEED 사용 기준](../docs/frontend-design-system.md)을 따릅니다.
+
+## 중간 발표 시연 (Issue #36)
+
+`http://localhost:3000/`에서 표지 → 로그인 → 취향 안내·5문항 → 지도 메인 → 메뉴 카드·카페 바텀시트를 확인합니다. 서비스명은 **카페 지도**입니다. 로그인은 실제 인증이 아니며 원하는 비어 있지 않은 값을 입력하면 됩니다. 계정·비밀번호·설문을 서버로 전송하지 않습니다.
+
+- 데이터는 `src/pages/demo/mock/index.ts`의 상수입니다. 파일에서 가상 카페·메뉴·설문을 바로 바꿀 수 있습니다. MSW·mock 서버·가짜 API 계층·localStorage는 없습니다.
+- 지도는 `public/maps/haenggung.svg`와 Leaflet 1.9.4를 사용합니다. [지도 출처·범위](public/maps/README.md)를 유지하세요. 공식 SEED 아이콘 1.35.0과 BottomSheet·TextField 스니펫을 추가했습니다.
+- 메뉴 카드와 카페 핀이 연동되고, 카페 시트에서 네이버·카카오 지도의 시연 지점으로 연결합니다. 현재 위치는 버튼을 누르고 브라우저에서 허용했을 때만 표시합니다.
+- 기존 상태 화면은 `/status`, health는 `/api/health`입니다. 기본 Docker 포트·서비스·DB 볼륨은 유지합니다.
+- 검수 절차·로컬 상태·실제 백엔드와의 경계·스니펫 변경 이유는 [시연 안내](../docs/demo.md)를 참고하세요. [Issue #36](https://github.com/seoJing/opensourceSW/issues/36)의 합의 범위이며 실제 업무 API 계약을 확정하지 않습니다.
