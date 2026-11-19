@@ -1,6 +1,6 @@
 # 프론트엔드
 
-React와 Vite로 만든 초기 상태 확인 화면입니다. 비즈니스 화면이나 외부 API 연동은 포함하지 않습니다.
+React·TypeScript·Vite와 SEED Design으로 만든 초기 상태 확인 화면입니다. 비즈니스 화면이나 외부 API 연동은 포함하지 않습니다.
 
 초기 구축 담당자는 폴더 구조·네이밍·공통 코드 사용법·테스트 작성법을 이 문서에 정리하고, 공통 진입점이나 설정이 바뀌면 `.github/harness-policy.json`의 감지 목록도 갱신합니다. 상세 인수인계와 공동 작업 규칙은 [공동 작업 가이드](../docs/collaboration.md)를 따릅니다.
 
@@ -33,3 +33,14 @@ pnpm dev
 - 기존 상태 확인 화면은 `pages/status`에 있습니다. 테스트는 화면 파일 옆에 두고 공통 설정은 `src/test/setup.ts`에 둡니다.
 
 프론트 디렉터리에서 `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`를 실행합니다. 의존성을 바꾸면 `pnpm-lock.yaml`을 함께 반영합니다.
+
+## SEED 디자인 시스템과 AI 스킬
+
+- SEED React·CSS 3.3.0, Vite 플러그인 2.1.1과 CLI 1.7.4를 고정하고 기존 pnpm·FSD·ESLint 규칙을 유지합니다.
+- 기존 상태 화면은 SEED Box·Text·ActionButton과 공개 토큰을 사용합니다. 연결 다시 확인 버튼은 확인 중 비활성화되고 오류 후 재시도할 수 있습니다. `/api/health` 계약은 유지합니다.
+- 공식 CLI 스니펫은 `src/shared/ui/seed-design`에 두고 앱에서는 `src/shared/ui/index.ts`를 사용합니다. `seed-design.json`·TypeScript paths·Vite alias는 같은 경로를 가리킵니다.
+- 발표 환경은 라이트 모드로 고정합니다. 시스템 폰트 fallback을 유지하고 외부 폰트·이미지를 추가하지 않습니다.
+- `pnpm exec seed-design add ui:<이름>`으로 실제 필요한 스니펫만 추가하고 `pnpm exec seed-design compat`로 호환성을 확인합니다. 기존 파일을 갱신하기 전 로컬 수정과 요구 버전을 비교합니다.
+- 팀 공유 공식 스킬은 [seed-design/SKILL.md](../.agents/skills/seed-design/SKILL.md)에 있습니다. Codex에서는 다음 턴부터 사용할 수 있고, 다른 도구에서는 이 링크로 읽습니다. [출처와 갱신 절차](../.agents/skills/seed-design/UPSTREAM.md)를 함께 유지합니다.
+
+의존성 선택 이유·토큰·접근성·스니펫 변경 기록·검증 방법은 [SEED 사용 기준](../docs/frontend-design-system.md)을 따릅니다.
