@@ -2,6 +2,7 @@ package com.suwontrip.app.recommendation;
 
 import com.suwontrip.app.auth.dto.AuthErrorResponse;
 import com.suwontrip.app.auth.security.SessionSecurity;
+import com.suwontrip.app.questionnaire.QuestionnaireDefinition;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,12 +30,14 @@ class MenuRecommendationController {
     private final SessionSecurity sessions;
     private final PreferenceProfileRepository profiles;
     private final Optional<MenuCardLookup> catalog;
+    private final QuestionnaireDefinition definition;
 
     MenuRecommendationController(SessionSecurity sessions, PreferenceProfileRepository profiles,
-                                 Optional<MenuCardLookup> catalog) {
+                                 Optional<MenuCardLookup> catalog, QuestionnaireDefinition definition) {
         this.sessions = sessions;
         this.profiles = profiles;
         this.catalog = catalog;
+        this.definition = definition;
     }
 
     record Request(List<String> excludedMenuIds) {}
@@ -50,7 +53,11 @@ class MenuRecommendationController {
         if (excluded.size() != ids.size()) {
             return malformed();
         }
-        var profile = profiles.findForUser(sessions.current(request).user().id());
+        var user = sessions.current(request).user();
+        if (user == null) {
+            return error(HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "로그인이 필요해요.");
+        }
+        var profile = profiles.findForUser(user.id(), definition.version());
         if (profile.isEmpty()) {
             return error(HttpStatus.CONFLICT, "PREFERENCES_REQUIRED", "현재 설문에 먼저 응답해 주세요.");
         }

@@ -61,7 +61,8 @@ class PreferenceProfileRepositoryTests {
         store("other", "v0.1.0", answers("AAAAAA").toString());
         assertThat(profiles.findForUser("old")).isEmpty();
         assertThat(profiles.findForUser("missing")).isEmpty();
-        assertThat(profiles.findForUser("other")).isPresent();
+        assertThat(profiles.findForUser("other", "v0.2.0")).isEmpty();
+        assertThat(profiles.findForUser("other", "v0.1.0")).isPresent();
         jdbc.sql("UPDATE user_preferences SET answers_json = ? WHERE user_id = ?")
                 .params(answers("BBB.BB").toString(), "other").update();
         assertThat(profiles.findForUser("other")).contains(new PreferenceProfile(

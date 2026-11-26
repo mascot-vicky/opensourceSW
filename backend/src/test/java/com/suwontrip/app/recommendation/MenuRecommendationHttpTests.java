@@ -68,7 +68,7 @@ class MenuRecommendationHttpTests {
     @Test
     void returnsOneCardWithCafeOrExplicitNullOnExhaustion() throws Exception {
         login();
-        when(profiles.findForUser("stored-account")).thenReturn(Optional.of(PROFILE));
+        when(profiles.findForUser("stored-account", "v0.1.0")).thenReturn(Optional.of(PROFILE));
         var cafe = new MenuCardLookup.Cafe("c", "검증 카페", "검증 주소", null, null);
         var card = new MenuCardLookup.Card("m", "c", "검증 메뉴", "", null, "검증 메뉴", false, cafe);
         when(cards.next(PROFILE, Set.of())).thenReturn(Optional.of(card));
@@ -80,12 +80,13 @@ class MenuRecommendationHttpTests {
     @Test
     void reportsStorageFailureWithoutReturningAnEmptyCard() throws Exception {
         login();
-        when(profiles.findForUser("stored-account")).thenThrow(new DataRetrievalFailureException("test failure"));
+        when(profiles.findForUser("stored-account", "v0.1.0")).thenThrow(new DataRetrievalFailureException("test failure"));
         mvc.perform(submit(body(List.of()))).andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.code").value("SERVICE_UNAVAILABLE")).andExpect(jsonPath("$.menu").doesNotExist());
     }
 
     private void login() {
+        when(definition.version()).thenReturn("v0.1.0");
         when(sessions.current(any())).thenReturn(new SessionResponse(true,
                 new SessionResponse.User("stored-account", "사용자"), "token"));
     }

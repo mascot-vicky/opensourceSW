@@ -25,6 +25,10 @@ public class PreferenceProfileRepository {
         this.json = json;
     }
 
+    public Optional<PreferenceProfile> findForUser(String userId, String activeQuestionnaireVersion) {
+        return VERSION.equals(activeQuestionnaireVersion) ? findForUser(userId) : Optional.empty();
+    }
+
     public Optional<PreferenceProfile> findForUser(String userId) {
         return jdbc.sql("""
                         SELECT answers_json FROM user_preferences
