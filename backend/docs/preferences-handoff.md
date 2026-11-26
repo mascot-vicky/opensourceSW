@@ -42,6 +42,18 @@ docker compose -p suwon-fe -f docker-compose.yml -f backend/compose.preferences.
 docker compose -p suwon-fe -f docker-compose.yml -f backend/compose.preferences.yml down
 ```
 
+## 카탈로그와 같은 DB에서 실행
+
+설문 단독 시연의 기본 볼륨은 `suwon-fe_preferences_data`입니다. 팀 프로젝트의 기존 카탈로그 DB를 이어서 사용할 때는 `SUWON_DB_VOLUME`에 `suwon_trip_postgres_data`를 지정합니다. 기존 설문 답변을 보존하면서 카탈로그를 추가할 때는 `suwon-fe_preferences_data`를 지정합니다. 두 DB를 동시에 같은 볼륨에 연결하지 않도록, 실행 중인 기존 프로젝트는 일반 `down`으로 종료합니다.
+
+Bash에서는 `export SUWON_DB_VOLUME=suwon-fe_preferences_data`, PowerShell에서는 `$env:SUWON_DB_VOLUME = 'suwon-fe_preferences_data'`처럼 사용할 볼륨을 선택합니다. 두 PR이 병합된 체크아웃에서 다음 명령을 사용합니다. 같은 터미널의 시연 계정 해시 설정도 필요합니다.
+
+```sh
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.preferences.yml -f backend/compose.catalog.yml up --build -d --wait
+```
+
+선택한 DB에서 카탈로그 입력을 다시 읽어도 같은 버전·해시의 데이터는 중복되지 않습니다. 이후 재실행에도 같은 볼륨 설정을 사용합니다.
+
 ## 브라우저 요청 순서
 
 | 시점 | API | 화면에서 처리할 값 |
