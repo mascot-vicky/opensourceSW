@@ -5,7 +5,54 @@
 - [OpenAPI 3.0 명세](preferences-openapi.yaml)에서 네 경로의 요청·응답·오류를 확인할 수 있습니다.
 - [문항 JSON](examples/questionnaire-v0.1.0.json)은 아래 실행 설정에서 서버가 실제로 읽는 파일입니다. 화면 개발용 mock에도 같은 파일을 사용할 수 있습니다.
 
-## 팀 PC에서 실행
+## 두 PR 병합 후 팀 PC에서 같은 추천 확인하기
+
+PR #26과 #31이 모두 병합된 뒤 Docker Desktop 또는 Docker Engine과 Compose가 실행 중인 PC에서 진행합니다. 새 복제본에 문항과 카탈로그가 포함되어 있습니다. 로컬 JSON을 복사하거나 다시 수집할 필요가 없습니다.
+
+```sh
+git clone https://github.com/seoJing/opensourceSW.git opensw-review
+cd opensw-review
+docker compose -p opensw-review build backend
+docker compose -p opensw-review run --rm --no-deps --entrypoint java backend "-Dloader.main=com.suwontrip.app.auth.support.PasswordHashTool" -cp /app/app.jar org.springframework.boot.loader.launch.PropertiesLauncher
+```
+
+마지막 명령에서 검토용 비밀번호를 정한 뒤, 출력된 해시를 같은 터미널에서 입력합니다. 새 검토용 DB의 볼륨 이름을 지정합니다.
+
+Windows PowerShell
+
+```powershell
+$env:DEMO_PASSWORD_HASH = Read-Host '출력된 BCrypt 해시'
+$env:SUWON_DB_VOLUME = 'opensw_review_db'
+```
+
+Bash
+
+```bash
+read -rs -p '출력된 BCrypt 해시: ' DEMO_PASSWORD_HASH
+echo
+export DEMO_PASSWORD_HASH
+export SUWON_DB_VOLUME=opensw_review_db
+```
+
+```sh
+docker compose -p opensw-review -f docker-compose.yml -f backend/compose.preferences.yml -f backend/compose.catalog.yml -f backend/compose.preview.yml up --build -d --wait
+```
+
+[검토 화면](http://localhost:18766/)에서 정한 비밀번호로 로그인합니다. 계정은 `fe-demo`입니다. **답변 저장하고 추천받기 → 다른 메뉴 보기**를 누르고 **API 요청과 응답 보기**를 펼칩니다. 첫 카드와 두 번째 카드의 `menu.id`가 달라야 합니다. 새로고침하면 같은 세션의 답변을 다시 읽습니다. 이 검토 화면만 전용 포트에서 API를 프록시합니다. 팀 React 화면은 별도로 `http://localhost:3000/`에서 실행됩니다. 기본 포트 3000·8080은 비어 있어야 합니다. 검토 포트 18766만 사용 중이면 실행 전에 환경변수 `API_PREVIEW_PORT`에 빈 포트를 지정하고 해당 주소로 접속합니다.
+
+DB에서 고정본 카페 320곳·메뉴 5,011건을 확인하는 명령입니다.
+
+```sh
+docker compose -p opensw-review exec -T db psql -U suwon_app -d suwon_trip -c "SELECT cafe_count, menu_count FROM catalog_dataset;"
+```
+
+종료할 때 다음 명령을 사용합니다. 이후 같은 볼륨으로 시작하면 저장한 답변을 다시 읽습니다.
+
+```sh
+docker compose -p opensw-review -f docker-compose.yml -f backend/compose.preferences.yml -f backend/compose.catalog.yml -f backend/compose.preview.yml down
+```
+
+## PR #26 단독으로 설문만 검토하기
 
 Docker Compose를 사용할 수 있는 터미널에서 별도 폴더에 브랜치를 받습니다. 아래 명령은 그 폴더의 저장소 루트에서 실행합니다. 백엔드는 기본 8080 포트를 사용합니다.
 
