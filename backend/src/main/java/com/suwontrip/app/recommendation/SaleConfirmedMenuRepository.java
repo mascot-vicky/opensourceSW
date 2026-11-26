@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Repository
 public class SaleConfirmedMenuRepository {
@@ -54,12 +55,33 @@ public class SaleConfirmedMenuRepository {
 
     public List<RankedMenu> rank(String reviewedVersion, Collection<String> reviewedMenuIds,
                                  Collection<String> excludedIds, PreferenceProfile profile) {
-        var ids = new HashSet<>(reviewedMenuIds);
-        ids.removeAll(excludedIds);
+        var ids = remainingIds(reviewedMenuIds, excludedIds);
         if (ids.isEmpty()) {
             return List.of();
         }
-        var parameters = candidates(reviewedVersion, ids)
+        return jdbc.query(RANKED, preferences(reviewedVersion, ids, profile), (row, index) ->
+                new RankedMenu(row.getString("menu_id"), row.getInt("matches")));
+    }
+
+    Optional<String> first(String reviewedVersion, Collection<String> reviewedMenuIds,
+                           Collection<String> excludedIds, PreferenceProfile profile) {
+        var ids = remainingIds(reviewedMenuIds, excludedIds);
+        if (ids.isEmpty()) {
+            return Optional.empty();
+        }
+        return jdbc.query(RANKED + " LIMIT 1", preferences(reviewedVersion, ids, profile),
+                (row, index) -> row.getString("menu_id")).stream().findFirst();
+    }
+
+    private static Collection<String> remainingIds(Collection<String> reviewedMenuIds, Collection<String> excludedIds) {
+        var ids = new HashSet<>(reviewedMenuIds);
+        ids.removeAll(excludedIds);
+        return ids;
+    }
+
+    private static MapSqlParameterSource preferences(String reviewedVersion, Collection<String> ids,
+                                                     PreferenceProfile profile) {
+        return candidates(reviewedVersion, ids)
                 .addValue("menuType", label(profile.menuType()), Types.VARCHAR)
                 .addValue("price", label(profile.priceLevel()), Types.VARCHAR)
                 .addValue("sweetness", label(profile.sweetness()), Types.VARCHAR)
@@ -67,8 +89,6 @@ public class SaleConfirmedMenuRepository {
                         ? profile.coffeeBased() : null, Types.BOOLEAN)
                 .addValue("temperature", label(profile.temperature()), Types.VARCHAR)
                 .addValue("signature", profile.signature(), Types.BOOLEAN);
-        return jdbc.query(RANKED, parameters, (row, index) ->
-                new RankedMenu(row.getString("menu_id"), row.getInt("matches")));
     }
 
     private static MapSqlParameterSource candidates(String version, Collection<String> ids) {

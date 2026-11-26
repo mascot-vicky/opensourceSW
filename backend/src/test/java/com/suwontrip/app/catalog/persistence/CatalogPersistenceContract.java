@@ -3,6 +3,7 @@ package com.suwontrip.app.catalog.persistence;
 import com.suwontrip.app.catalog.Catalog;
 import com.suwontrip.app.catalog.CatalogLoadException;
 import com.suwontrip.app.catalog.CatalogLoader;
+import com.suwontrip.app.recommendation.CatalogMenuCardLookup;
 import com.suwontrip.app.recommendation.PreferenceProfile;
 import com.suwontrip.app.recommendation.SaleConfirmedMenuRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.support.JdbcTransactionManager;
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -73,6 +75,32 @@ abstract class CatalogPersistenceContract {
         jdbc.update("UPDATE catalog_menu SET name = ? WHERE menu_id = ?", "DB에서 변경한 이름", "menu-1");
         assertThat(new CatalogRepository(jdbc).findMenu("menu-1").orElseThrow().name())
                 .isEqualTo("DB에서 변경한 이름");
+    }
+
+    @Test
+    void resolvesCardAndCafeForOneReviewedSaleWithNullableFields() {
+        importer.importDocument(replace(document("v2"), "\"isDemo\": true", "\"isDemo\": false"));
+        var candidates = new SaleConfirmedMenuRepository(new NamedParameterJdbcTemplate(jdbc));
+        var profile = new PreferenceProfile(null, null, null, null, null, null);
+        var review = new CatalogMenuCardLookup.Review("v2", Set.of("menu-1", "menu-2"));
+        var lookup = new CatalogMenuCardLookup(repository, candidates, review);
+        jdbc.update("UPDATE catalog_cafe SET name = ? WHERE cafe_id = 'cafe-1'", "카페 A/B, #1");
+        var card = lookup.next(profile, Set.of()).orElseThrow();
+        assertThat(card.id()).isEqualTo("menu-1");
+        assertThat(card.cafe().id()).isEqualTo(card.cafeId());
+        assertThat(card.cafe().roadAddress()).isEqualTo("테스트 주소");
+        assertThat(card.cafe().location().latitude()).isEqualTo(37.28);
+        assertThat(card.cafe().directionsUrl()).startsWith("https://map.naver.com/p/directions/-/")
+                .contains("%20A%2FB%2C%20%231").endsWith(",,ADDRESS_POI/-/walk");
+        assertThat(lookup.next(profile, Set.of("menu-1"))).isEmpty();
+        jdbc.update("UPDATE catalog_menu SET description = NULL WHERE menu_id = 'menu-1'");
+        jdbc.update("UPDATE catalog_cafe SET latitude = NULL, longitude = NULL WHERE cafe_id = 'cafe-1'");
+        var noLocation = lookup.next(profile, Set.of()).orElseThrow();
+        assertThat(noLocation.description()).isEmpty();
+        assertThat(noLocation.cafe().location()).isNull();
+        assertThat(noLocation.cafe().directionsUrl()).isNull();
+        importer.importDocument(document("new-version"));
+        assertThat(lookup.next(profile, Set.of())).isEmpty();
     }
 
     @Test
