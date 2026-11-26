@@ -12,6 +12,9 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
+    "paths": {
+      "seed-design/*": ["./src/shared/ui/seed-design/*"]
+    },
     "types": [
       "vite/client"
     ]
