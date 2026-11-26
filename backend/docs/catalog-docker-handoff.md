@@ -2,7 +2,7 @@
 
 관련 작업: [Issue #29](https://github.com/seoJing/opensourceSW/issues/29) · 선행 코드: [PR #23](https://github.com/seoJing/opensourceSW/pull/23), [PR #31](https://github.com/seoJing/opensourceSW/pull/31)
 
-처음 환경을 받는 팀원은 [작업 착수 안내 HTML](team-getting-started.html)을 따른다. 아래 절차는 #23 → #31 → #30이 main에 병합된 뒤 사용할 수 있다. 병합 전 main만으로는 실제 카탈로그를 적재할 수 없다.
+처음 환경을 받는 팀원은 [작업 착수 안내 HTML](team-getting-started.html)을 따른다. 아래 절차는 #31이 main에 병합된 뒤 사용할 수 있다. 병합 전 main만으로는 실제 카탈로그를 적재할 수 없다.
 
 ## 포함한 고정 데이터
 
@@ -70,4 +70,4 @@ docker compose -p opensourcesw -f docker-compose.yml down
 
 ## 검증 범위
 
-기존 통합 로컬 검증에서 이미지 빌드·카페 320곳·메뉴 5,011건 적재·원본 전체 필드 대조·JSON 없는 재생성 후 데이터 보존과 세 서비스 health를 확인했다. 저장소 기본 입력으로 바꾼 이번 검증은 PR #30의 검증 결과에 기록한다. 다른 팀원 PC 자체의 실행은 아직 확인하지 않았다. 기본 CI smoke는 선택형 카탈로그 적재를 실행하지 않는다.
+기존 통합 로컬 검증에서 이미지 빌드·카페 320곳·메뉴 5,011건 적재·원본 전체 필드 대조·JSON 없는 재생성 후 데이터 보존과 세 서비스 health를 확인했다. 저장소 기본 입력으로 바꾼 이번 검증은 PR #31의 검증 결과에 기록한다. 다른 팀원 PC 자체의 실행은 아직 확인하지 않았다. 기본 CI smoke는 선택형 카탈로그 적재를 실행하지 않는다.
