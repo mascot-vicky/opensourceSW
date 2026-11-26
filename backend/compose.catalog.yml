@@ -1,8 +1,6 @@
 services:
   backend:
     environment:
-      APP_RECOMMENDATION_REVIEW_VERSION: ${REVIEWED_CATALOG_VERSION:-}
-      APP_RECOMMENDATION_REVIEW_IDS: ${REVIEWED_MENU_IDS:-}
       APP_CATALOG_ENABLED: "true"
       APP_CATALOG_PATH: /app/data/catalog.json
     volumes:

@@ -2,8 +2,6 @@ package com.suwontrip.app.recommendation;
 
 import com.suwontrip.app.catalog.CatalogCafe;
 import com.suwontrip.app.catalog.persistence.CatalogRepository;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -16,36 +14,20 @@ import java.util.Optional;
 import java.util.Set;
 
 @Service
-@EnableConfigurationProperties(CatalogMenuCardLookup.Review.class)
 public class CatalogMenuCardLookup implements MenuCardLookup {
-    @ConfigurationProperties("app.recommendation.review")
-    public record Review(String version, Set<String> ids) {
-        public Review {
-            ids = ids == null ? Set.of() : Set.copyOf(ids);
-            if (!ids.isEmpty() && (version == null || version.isBlank() || ids.stream().anyMatch(String::isBlank))) {
-                throw new IllegalArgumentException("Reviewed menu IDs require a catalog version and nonblank IDs");
-            }
-        }
-    }
-
     private final CatalogRepository catalog;
-    private final SaleConfirmedMenuRepository candidates;
-    private final Review review;
+    private final MenuRecommendationRepository candidates;
 
-    public CatalogMenuCardLookup(CatalogRepository catalog, SaleConfirmedMenuRepository candidates, Review review) {
+    public CatalogMenuCardLookup(CatalogRepository catalog, MenuRecommendationRepository candidates) {
         this.catalog = catalog;
         this.candidates = candidates;
-        this.review = review;
     }
 
     @Override
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Optional<Card> next(PreferenceProfile profile, Set<String> excludedMenuIds) {
         var active = catalog.activeDataset().orElseThrow(() -> new DataRetrievalFailureException("No active catalog"));
-        if (review.ids().isEmpty() || !active.dataVersion().equals(review.version())) {
-            return Optional.empty();
-        }
-        return candidates.first(review.version(), review.ids(), excludedMenuIds, profile).map(id -> {
+        return candidates.first(active.dataVersion(), excludedMenuIds, profile).map(id -> {
             var menu = catalog.findMenu(id).orElseThrow(() -> new IllegalStateException("Ranked menu missing"));
             var cafe = catalog.findCafe(menu.cafeId()).orElseThrow(() -> new IllegalStateException("Menu cafe missing"));
             var location = cafe.location() == null ? null

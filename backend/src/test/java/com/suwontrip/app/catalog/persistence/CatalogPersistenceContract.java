@@ -5,7 +5,7 @@ import com.suwontrip.app.catalog.CatalogLoadException;
 import com.suwontrip.app.catalog.CatalogLoader;
 import com.suwontrip.app.recommendation.CatalogMenuCardLookup;
 import com.suwontrip.app.recommendation.PreferenceProfile;
-import com.suwontrip.app.recommendation.SaleConfirmedMenuRepository;
+import com.suwontrip.app.recommendation.MenuRecommendationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -17,7 +17,6 @@ import org.springframework.jdbc.support.JdbcTransactionManager;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -78,12 +77,11 @@ abstract class CatalogPersistenceContract {
     }
 
     @Test
-    void resolvesCardAndCafeForOneReviewedSaleWithNullableFields() {
+    void resolvesCatalogCardsInOrderWithNullableFields() {
         importer.importDocument(replace(document("v2"), "\"isDemo\": true", "\"isDemo\": false"));
-        var candidates = new SaleConfirmedMenuRepository(new NamedParameterJdbcTemplate(jdbc));
+        var candidates = new MenuRecommendationRepository(new NamedParameterJdbcTemplate(jdbc));
         var profile = new PreferenceProfile(null, null, null, null, null, null);
-        var review = new CatalogMenuCardLookup.Review("v2", Set.of("menu-1", "menu-2"));
-        var lookup = new CatalogMenuCardLookup(repository, candidates, review);
+        var lookup = new CatalogMenuCardLookup(repository, candidates);
         jdbc.update("UPDATE catalog_cafe SET name = ? WHERE cafe_id = 'cafe-1'", "카페 A/B, #1");
         var card = lookup.next(profile, Set.of()).orElseThrow();
         assertThat(card.id()).isEqualTo("menu-1");
@@ -92,7 +90,8 @@ abstract class CatalogPersistenceContract {
         assertThat(card.cafe().location().latitude()).isEqualTo(37.28);
         assertThat(card.cafe().directionsUrl()).startsWith("https://map.naver.com/p/directions/-/")
                 .contains("%20A%2FB%2C%20%231").endsWith(",,ADDRESS_POI/-/walk");
-        assertThat(lookup.next(profile, Set.of("menu-1"))).isEmpty();
+        assertThat(lookup.next(profile, Set.of("menu-1")).orElseThrow().id()).isEqualTo("menu-2");
+        assertThat(lookup.next(profile, Set.of("menu-1", "menu-2", "menu-3"))).isEmpty();
         jdbc.update("UPDATE catalog_menu SET description = NULL WHERE menu_id = 'menu-1'");
         jdbc.update("UPDATE catalog_cafe SET latitude = NULL, longitude = NULL WHERE cafe_id = 'cafe-1'");
         var noLocation = lookup.next(profile, Set.of()).orElseThrow();
@@ -100,19 +99,18 @@ abstract class CatalogPersistenceContract {
         assertThat(noLocation.cafe().location()).isNull();
         assertThat(noLocation.cafe().directionsUrl()).isNull();
         importer.importDocument(document("new-version"));
-        assertThat(lookup.next(profile, Set.of())).isEmpty();
+        assertThat(lookup.next(profile, Set.of()).orElseThrow().id()).isEqualTo("menu-2");
     }
 
     @Test
-    void ranksConfirmedMenuUsingMigratedAttributeViews() {
+    void ranksAllCatalogMenusUsingMigratedAttributeViews() {
         importer.importDocument(replace(document("v2"), "\"isDemo\": true", "\"isDemo\": false"));
-        var candidates = new SaleConfirmedMenuRepository(new NamedParameterJdbcTemplate(jdbc));
+        var candidates = new MenuRecommendationRepository(new NamedParameterJdbcTemplate(jdbc));
         var profile = new PreferenceProfile(null, PreferenceProfile.Level.LOW, null, null, null, null);
-        var reviewed = List.of("menu-1", "menu-2", "menu-3");
-
-        assertThat(candidates.rank("v2", reviewed, List.of(), profile))
-                .containsExactly(new SaleConfirmedMenuRepository.RankedMenu("menu-1", 1));
-        assertThat(candidates.rank("v2", reviewed, List.of("menu-1"), profile)).isEmpty();
+        assertThat(candidates.first("v2", Set.of(), profile)).contains("menu-1");
+        assertThat(candidates.first("v2", Set.of("menu-1"), profile)).contains("menu-3");
+        assertThat(candidates.first("v2", Set.of("menu-1", "menu-3"), profile)).contains("menu-2");
+        assertThat(candidates.first("v1", Set.of(), profile)).isEmpty();
     }
 
     @Test
