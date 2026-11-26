@@ -3,16 +3,20 @@ package com.suwontrip.app.catalog.persistence;
 import com.suwontrip.app.catalog.Catalog;
 import com.suwontrip.app.catalog.CatalogLoadException;
 import com.suwontrip.app.catalog.CatalogLoader;
+import com.suwontrip.app.recommendation.PreferenceProfile;
+import com.suwontrip.app.recommendation.SaleConfirmedMenuRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.JdbcTransactionManager;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +73,18 @@ abstract class CatalogPersistenceContract {
         jdbc.update("UPDATE catalog_menu SET name = ? WHERE menu_id = ?", "DB에서 변경한 이름", "menu-1");
         assertThat(new CatalogRepository(jdbc).findMenu("menu-1").orElseThrow().name())
                 .isEqualTo("DB에서 변경한 이름");
+    }
+
+    @Test
+    void ranksConfirmedMenuUsingMigratedAttributeViews() {
+        importer.importDocument(replace(document("v2"), "\"isDemo\": true", "\"isDemo\": false"));
+        var candidates = new SaleConfirmedMenuRepository(new NamedParameterJdbcTemplate(jdbc));
+        var profile = new PreferenceProfile(null, PreferenceProfile.Level.LOW, null, null, null, null);
+        var reviewed = List.of("menu-1", "menu-2", "menu-3");
+
+        assertThat(candidates.rank("v2", reviewed, List.of(), profile))
+                .containsExactly(new SaleConfirmedMenuRepository.RankedMenu("menu-1", 1));
+        assertThat(candidates.rank("v2", reviewed, List.of("menu-1"), profile)).isEmpty();
     }
 
     @Test

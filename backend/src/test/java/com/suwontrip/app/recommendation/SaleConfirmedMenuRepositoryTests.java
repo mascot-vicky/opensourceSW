@@ -54,6 +54,46 @@ class SaleConfirmedMenuRepositoryTests {
     }
 
     @Test
+    void ranksBySixEqualMatchesAfterFilteringAndBreaksTiesByCatalogOrder() {
+        jdbc.execute("""
+                CREATE TABLE traits (data_version VARCHAR, menu_id VARCHAR, menu_type VARCHAR,
+                    price_level VARCHAR, sweetness VARCHAR, coffee_based BOOLEAN,
+                    temperature VARCHAR, is_signature BOOLEAN)
+                """);
+        for (String view : List.of("classification", "price", "temperature", "reviewed_traits")) {
+            jdbc.execute("CREATE VIEW catalog_menu_" + view + "_v1 AS SELECT * FROM traits");
+        }
+        var reviewed = List.of("unknown", "second", "first", "excluded", "stopped", "partial");
+        for (int i = 0; i < reviewed.size(); i++) {
+            String id = reviewed.get(i);
+            menu("v2", id, i, false, id.equals("stopped") ? "UNAVAILABLE" : "AVAILABLE", today, "검증 기록");
+        }
+        jdbc.update("""
+                INSERT INTO traits VALUES
+                    ('v2','unknown',NULL,NULL,NULL,NULL,NULL,NULL),
+                    ('v2','first','beverage','medium','high',false,'cold',true),
+                    ('v2','second','beverage','medium','high',false,'both',true),
+                    ('v2','partial','dessert','high','low',NULL,'cold',false),
+                    ('v2','excluded','beverage','medium','high',false,'cold',true),
+                    ('v2','stopped','beverage','medium','high',false,'cold',true)
+                """);
+        var profile = new PreferenceProfile(PreferenceProfile.MenuType.BEVERAGE, PreferenceProfile.Level.MEDIUM,
+                PreferenceProfile.Level.HIGH, false, PreferenceProfile.Temperature.COLD, true);
+        assertThat(repository.rank("v2", reviewed, List.of("excluded"), profile))
+                .containsExactly(new SaleConfirmedMenuRepository.RankedMenu("second", 6),
+                        new SaleConfirmedMenuRepository.RankedMenu("first", 6),
+                        new SaleConfirmedMenuRepository.RankedMenu("partial", 1),
+                        new SaleConfirmedMenuRepository.RankedMenu("unknown", 0));
+        assertThat(repository.rank("v1", reviewed, List.of(), profile)).isEmpty();
+        assertThat(repository.rank("v2", reviewed, reviewed, profile)).isEmpty();
+        var indifferent = new PreferenceProfile(null, null, null, null, null, null);
+        assertThat(repository.rank("v2", List.of("first", "unknown", "second"), List.of(), indifferent))
+                .containsExactly(new SaleConfirmedMenuRepository.RankedMenu("unknown", 0),
+                        new SaleConfirmedMenuRepository.RankedMenu("second", 0),
+                        new SaleConfirmedMenuRepository.RankedMenu("first", 0));
+    }
+
+    @Test
     void rejectsIncompleteOrFutureEvidence() {
         menu("v2", "blank", 1, false, "AVAILABLE", today, " \t ");
         menu("v2", "no-date", 2, false, "AVAILABLE", null, "매장 확인");
