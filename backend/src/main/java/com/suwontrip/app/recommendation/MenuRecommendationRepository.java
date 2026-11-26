@@ -11,23 +11,35 @@ import java.util.Optional;
 
 @Repository
 public class MenuRecommendationRepository {
-    private static final String RANKED = """
-            SELECT m.menu_id,
-                   CASE WHEN c.menu_type = :menuType THEN 1 ELSE 0 END
-                 + CASE WHEN p.price_level = :price THEN 1 ELSE 0 END
-                 + CASE WHEN r.sweetness = :sweetness THEN 1 ELSE 0 END
-                 + CASE WHEN c.coffee_based = :coffee THEN 1 ELSE 0 END
-                 + CASE WHEN t.temperature = :temperature OR
-                             (t.temperature = 'both' AND CAST(:temperature AS VARCHAR) IN ('hot', 'cold'))
-                        THEN 1 ELSE 0 END
-                 + CASE WHEN r.is_signature = :signature THEN 1 ELSE 0 END AS matches
-            FROM catalog_menu m
-            JOIN catalog_menu_classification_v1 c USING (data_version, menu_id)
-            JOIN catalog_menu_price_v1 p USING (data_version, menu_id)
-            JOIN catalog_menu_temperature_v1 t USING (data_version, menu_id)
-            JOIN catalog_menu_reviewed_traits_v1 r USING (data_version, menu_id)
-            JOIN catalog_active a ON a.singleton_id = 1 AND a.data_version = m.data_version
-            WHERE m.data_version = :version AND NOT m.is_demo
+    private static final String SCORES = """
+            SELECT menu_id FROM (
+                SELECT m.menu_id, m.ordinal, 0 AS points
+                FROM catalog_menu m
+                JOIN catalog_active a ON a.singleton_id = 1 AND a.data_version = m.data_version
+                WHERE m.data_version = :version AND NOT m.is_demo
+                UNION ALL
+                SELECT menu_id, NULL,
+                       CASE WHEN menu_type = :menuType THEN 1 ELSE 0 END
+                     + CASE WHEN coffee_based = :coffee THEN 1 ELSE 0 END
+                FROM catalog_menu_classification_v1 WHERE data_version = :version
+                UNION ALL
+                SELECT menu_id, NULL, CASE WHEN price_level = :price THEN 1 ELSE 0 END
+                FROM catalog_menu_price_v1 WHERE data_version = :version
+                UNION ALL
+                SELECT menu_id, NULL, CASE WHEN temperature = :temperature OR
+                      (temperature = 'both' AND CAST(:temperature AS VARCHAR) IN ('hot', 'cold'))
+                      THEN 1 ELSE 0 END
+                FROM catalog_menu_temperature_v1 WHERE data_version = :version
+                UNION ALL
+                SELECT menu_id, NULL,
+                       CASE WHEN sweetness = :sweetness THEN 1 ELSE 0 END
+                     + CASE WHEN is_signature = :signature THEN 1 ELSE 0 END
+                FROM catalog_menu_reviewed_traits_v1 WHERE data_version = :version
+            ) scored
+            """;
+    private static final String FIRST = """
+             GROUP BY menu_id HAVING MAX(ordinal) IS NOT NULL
+             ORDER BY SUM(points) DESC, MAX(ordinal) LIMIT 1
             """;
 
     private final NamedParameterJdbcTemplate jdbc;
@@ -45,13 +57,12 @@ public class MenuRecommendationRepository {
                         ? profile.coffeeBased() : null, Types.BOOLEAN)
                 .addValue("temperature", label(profile.temperature()), Types.VARCHAR)
                 .addValue("signature", profile.signature(), Types.BOOLEAN);
-        String sql = RANKED;
+        String sql = SCORES;
         if (!excludedIds.isEmpty()) {
-            sql += " AND m.menu_id NOT IN (:excludedIds)";
+            sql += " WHERE menu_id NOT IN (:excludedIds)";
             parameters.addValue("excludedIds", excludedIds);
         }
-        return jdbc.query(sql + " ORDER BY matches DESC, m.ordinal LIMIT 1", parameters,
-                        (row, index) -> row.getString("menu_id"))
+        return jdbc.queryForList(sql + FIRST, parameters, String.class)
                 .stream().findFirst();
     }
 
