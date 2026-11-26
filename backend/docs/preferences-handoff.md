@@ -1,6 +1,6 @@
 # 로그인과 설문 연동
 
-프론트에서 연동할 순서는 로그인 → 설문 정의·저장값 조회 → 답변 제출 → 재조회입니다. 이 브랜치는 #19의 세션 인증, #26의 문항 조회, #31의 PostgreSQL 마이그레이션, #38의 답변 저장을 포함합니다. 현재 시연 화면은 로컬 로그인과 고정 5문항을 사용합니다. 연동용 v0.1.0은 6문항 초안입니다.
+프론트에서 연동할 순서는 로그인 → 설문 정의·저장값 조회 → 답변 제출 → 재조회입니다. PR #26에서 문항 조회, 계정별 답변 저장·복원, 추천용 선호값 변환을 함께 제공합니다. 현재 시연 화면은 로컬 로그인과 고정 5문항을 사용합니다. 연동용 v0.1.0은 6문항 초안입니다.
 
 - [OpenAPI 3.0 명세](preferences-openapi.yaml)에서 세 경로의 요청·응답·오류를 확인할 수 있습니다.
 - [문항 JSON](examples/questionnaire-v0.1.0.json)은 아래 실행 설정에서 서버가 실제로 읽는 파일입니다. 화면 개발용 mock에도 같은 파일을 사용할 수 있습니다.
@@ -10,7 +10,7 @@
 Docker Compose를 사용할 수 있는 터미널에서 별도 폴더에 브랜치를 받습니다. 아래 명령은 그 폴더의 저장소 루트에서 실행합니다. 백엔드는 기본 8080 포트를 사용합니다.
 
 ```sh
-git clone --branch feature/backend/38-preference-answers --single-branch https://github.com/mascot-vicky/opensourceSW.git opensw-fe-integration
+git clone --branch feature/backend/20-questionnaire-read --single-branch https://github.com/mascot-vicky/opensourceSW.git opensw-fe-integration
 cd opensw-fe-integration
 docker compose -p suwon-fe build backend
 docker compose -p suwon-fe run --rm --no-deps --entrypoint java backend "-Dloader.main=com.suwontrip.app.auth.support.PasswordHashTool" -cp /app/app.jar org.springframework.boot.loader.launch.PropertiesLauncher
@@ -62,4 +62,4 @@ docker compose -p suwon-fe -f docker-compose.yml -f backend/compose.preferences.
 - v0.1.0에서 Q1=A(음료)일 때만 Q4를 표시합니다. Q1이 바뀌어 Q4가 숨겨지면 이전 선택을 지우고 `{"questionId":"Q4","optionIds":[]}`로 제출합니다. 이 표시 조건은 현재 조회 응답에 별도 필드로 제공되지 않습니다.
 - 전체 정의 순서로 모든 문항을 보냅니다. 미응답은 빈 배열, ‘상관없음’을 직접 골랐다면 해당 선택지 ID를 보냅니다. 저장 API에는 `userId`나 계산한 속성값을 보내지 않습니다.
 - 401이면 로그인 상태를 확인합니다. 403이면 세션과 CSRF 값을 갱신합니다. 409이면 정의를 다시 받아 재설문을 안내합니다. 422이면 입력을 유지한 채 `errors[].questionId`로 오류를 표시합니다.
-- 저장 성공은 사용자 답의 보존까지 의미합니다. 추천 카드·지도 핀 API와 메뉴 순위는 후속 범위입니다. 프론트에서 카드·핀에 필요한 필드나 빈 결과 화면 요구가 생기면 Issue #38에서 후속 계약을 요청해 주세요.
+- 저장 성공은 사용자 답의 보존까지 의미합니다. 추천 카드·지도 핀 API와 메뉴 순위는 후속 범위입니다. 프론트에서 카드·핀에 필요한 필드나 빈 결과 화면 요구가 생기면 Issue #20에서 후속 계약을 요청해 주세요.
