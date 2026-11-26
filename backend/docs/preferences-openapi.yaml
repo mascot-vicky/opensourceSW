@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: 로그인·설문 조회·답변 저장
-  version: 0.1.0
+  title: 로그인·설문·메뉴 추천
+  version: 0.2.0
   description: 브라우저는 같은 출처의 /api/v1 경로를 사용합니다. v0.1.0 예시 설문은 연동 검토용입니다.
 security:
 - sessionCookie: []
@@ -378,6 +378,78 @@ paths:
                       questionId: Q4
                       reason: SELECTION_COUNT
                       message: 음료를 고르지 않으면 Q4는 빈 배열로 보내 주세요.
+  /api/v1/menu-recommendations:
+    post:
+      operationId: recommendMenu
+      summary: 저장된 선호값에 맞는 메뉴 카드 한 장과 카페 정보 조회
+      parameters:
+      - $ref: '#/components/parameters/CsrfToken'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [excludedMenuIds]
+              properties:
+                excludedMenuIds:
+                  type: array
+                  maxItems: 100
+                  uniqueItems: true
+                  items: {type: string, minLength: 1, pattern: '\S'}
+            example: {excludedMenuIds: []}
+      responses:
+        '200':
+          description: 추천 결과. 후보가 소진되면 menu는 null입니다.
+          headers:
+            Cache-Control:
+              schema: {type: string, enum: [no-store]}
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [menu]
+                properties:
+                  menu:
+                    $ref: '#/components/schemas/MenuCard'
+              example: {menu: null}
+        '400':
+          description: INVALID_REQUEST
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: AUTHENTICATION_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: CSRF_INVALID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: PREFERENCES_REQUIRED
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: INTERNAL_ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: SERVICE_UNAVAILABLE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     sessionCookie:
@@ -385,6 +457,33 @@ components:
       in: cookie
       name: JSESSIONID
   schemas:
+    MenuCard:
+      type: object
+      nullable: true
+      required: [id, cafeId, name, description, imageUrl, imageAlt, isDemo, cafe]
+      properties:
+        id: {type: string}
+        cafeId: {type: string}
+        name: {type: string}
+        description: {type: string}
+        imageUrl: {type: string, nullable: true}
+        imageAlt: {type: string}
+        isDemo: {type: boolean}
+        cafe:
+          type: object
+          required: [id, name, roadAddress, location, directionsUrl]
+          properties:
+            id: {type: string, description: 상위 cafeId와 같습니다.}
+            name: {type: string}
+            roadAddress: {type: string}
+            location:
+              type: object
+              nullable: true
+              required: [latitude, longitude]
+              properties:
+                latitude: {type: number, minimum: -90, maximum: 90}
+                longitude: {type: number, minimum: -180, maximum: 180}
+            directionsUrl: {type: string, format: uri, nullable: true}
     Session:
       type: object
       required:
