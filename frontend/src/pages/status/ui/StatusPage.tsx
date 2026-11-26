@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
+import { Box, Text } from '@seed-design/react'
 
+import { ActionButton } from '../../../shared/ui'
 import { getHealth } from '../api/getHealth'
 
 const checkingStatus = {
@@ -10,6 +12,7 @@ const checkingStatus = {
 
 export default function StatusPage() {
   const [backendStatus, setBackendStatus] = useState(checkingStatus)
+  const [checkVersion, setCheckVersion] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -43,16 +46,21 @@ export default function StatusPage() {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [checkVersion])
+
+  function recheckBackend() {
+    setBackendStatus(checkingStatus)
+    setCheckVersion(version => version + 1)
+  }
 
   return (
     <main className="page-shell">
-      <section className="status-card" aria-labelledby="project-title">
-        <p className="eyebrow">초기 개발 환경</p>
-        <h1 id="project-title">수원 랜덤 여행 코스</h1>
-        <p className="intro">
+      <Box as="section" className="status-card" aria-labelledby="project-title" bg="bg.layerDefault" borderRadius="r4" borderWidth="1" borderColor="stroke.neutralMuted">
+        <Text as="p" color="fg.brand" textStyle="t3Bold">초기 개발 환경</Text>
+        <Text as="h1" id="project-title" className="project-title" textStyle="t9Bold">수원 랜덤 여행 코스</Text>
+        <Text as="p" color="fg.neutralMuted" textStyle="t5Regular" className="intro">
           팀 개발을 시작하기 위한 빈 프로젝트가 실행 중입니다. 여행 기능은 아직 구현하지 않았습니다.
-        </p>
+        </Text>
 
         <dl className="status-list">
           <div>
@@ -68,8 +76,20 @@ export default function StatusPage() {
           </div>
         </dl>
 
-        <p className="notice">POI, 추천, 지도 등 실제 여행 기능은 팀 협업을 통해 이후 추가할 예정입니다.</p>
-      </section>
+        <ActionButton
+          type="button"
+          aria-label="연결 다시 확인"
+          variant="neutralOutline"
+          size="medium"
+          loading={backendStatus.className === 'checking'}
+          disabled={backendStatus.className === 'checking'}
+          onClick={recheckBackend}
+        >
+          연결 다시 확인
+        </ActionButton>
+
+        <Text as="p" color="fg.neutralSubtle" textStyle="t4Regular" className="notice">POI, 추천, 지도 등 실제 여행 기능은 팀 협업을 통해 이후 추가할 예정입니다.</Text>
+      </Box>
     </main>
   )
 }

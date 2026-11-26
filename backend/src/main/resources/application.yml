@@ -1,17 +1,49 @@
 spring:
+
   application:
     name: suwon-trip-backend
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/suwon_trip}
     username: ${SPRING_DATASOURCE_USERNAME:suwon_app}
     password: ${SPRING_DATASOURCE_PASSWORD:local_dev_only_password}
 
+server:
+  servlet:
+    session:
+
+      timeout: ${SESSION_TIMEOUT:30m}
+
+      tracking-modes: cookie
+      cookie:
+
+        http-only: true
+        same-site: lax
+
+        # 로컬 HTTP 기본값. HTTPS에서는 true로 설정해야 함.
+        secure: ${SESSION_COOKIE_SECURE:false}
+
+app:
+  auth:
+
+    demo:
+      user-id: ${DEMO_USER_ID:}
+      display-name: ${DEMO_DISPLAY_NAME:}
+      login-id: ${DEMO_LOGIN_ID:}
+      password-hash: ${DEMO_PASSWORD_HASH:}
+
+    max-login-attempts: ${AUTH_LOGIN_MAX_ATTEMPTS:5}
+    login-window: ${AUTH_LOGIN_WINDOW:60s}
+    max-tracked-clients: ${AUTH_LOGIN_MAX_TRACKED_CLIENTS:1000}
+
 management:
   endpoints:
     web:
       exposure:
+
         include: health
   endpoint:
     health:
+
       show-components: always
       show-details: never
