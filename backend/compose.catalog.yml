@@ -10,3 +10,7 @@ services:
         read_only: true
         bind:
           create_host_path: false
+
+volumes:
+  postgres_data:
+    name: ${SUWON_DB_VOLUME:-suwon_trip_postgres_data}

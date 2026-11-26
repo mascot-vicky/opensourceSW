@@ -36,6 +36,16 @@ docker compose -p opensourcesw exec -T db psql -U suwon_app -d suwon_trip -c "SE
 
 DB 사용자·이름을 바꿨다면 `-U`, `-d`도 맞춘다. 브라우저에서 `http://localhost:3000/api/health`의 최상위 status와 components.db.status가 모두 UP인지 확인한다. 팀 저장소의 시연 화면은 `/`, 상태 화면은 `/status`에 있다. 시연 카드는 프론트의 고정 데이터를 사용한다. 실제 카탈로그 적재는 위 SQL로 확인한다. 프론트 주소의 `/api/v1/auth/session`이 HTML을 반환하면 기능 API 프록시 연결이 필요하다.
 
+## 설문과 같은 DB 사용
+
+두 PR이 병합된 뒤 설문까지 실행하려면 설문 안내에 따라 `DEMO_PASSWORD_HASH`를 설정하고, 같은 프로젝트 이름으로 두 확장 파일을 함께 실행한다. 아래 순서에서는 기존 카탈로그 볼륨 `suwon_trip_postgres_data`가 기본이다.
+
+```sh
+docker compose -p opensourcesw -f docker-compose.yml -f backend/compose.preferences.yml -f backend/compose.catalog.yml up --build -d --wait
+```
+
+기존 설문 전용 DB에서 이어갈 때는 그 프로젝트를 먼저 일반 `down`으로 종료하고 `SUWON_DB_VOLUME`에 기존 이름(예: `suwon-fe_preferences_data`)을 설정한다. 같은 볼륨을 사용하는 DB 컨테이너는 한 개만 실행한다. 이후 실행에도 같은 값을 사용한다. 두 볼륨에 각각 저장한 답변을 자동으로 합치지는 않는다. 카탈로그는 선택한 DB에 고정 JSON으로 적재한다.
+
 ## 다른 버전의 파일 사용
 
 저장소 기본 입력 대신 다른 파일을 사용할 때만 `CATALOG_FILE`에 절대 경로를 지정한다. WSL에서는 WSL 경로, PowerShell에서는 Windows 경로를 사용한다. 파일과 상위 폴더는 컨테이너의 비루트 사용자가 읽을 수 있어야 한다.
