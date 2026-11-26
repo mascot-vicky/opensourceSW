@@ -34,7 +34,7 @@ docker compose -p opensourcesw exec -T db psql -U suwon_app -d suwon_trip -c "SE
 docker compose -p opensourcesw exec -T db psql -U suwon_app -d suwon_trip -c "SELECT COUNT(*) FROM catalog_cafe JOIN catalog_active USING (data_version); SELECT COUNT(*) FROM catalog_menu JOIN catalog_active USING (data_version);"
 ```
 
-DB 사용자·이름을 바꿨다면 `-U`, `-d`도 맞춘다. 브라우저에서 `http://localhost:3000/api/health`의 최상위 status와 components.db.status가 모두 UP인지 확인한다. 기본 화면은 상태 확인용이며 카탈로그 HTTP API·추천 화면·프론트 `/api/v1` 프록시는 별도 작업이다.
+DB 사용자·이름을 바꿨다면 `-U`, `-d`도 맞춘다. 브라우저에서 `http://localhost:3000/api/health`의 최상위 status와 components.db.status가 모두 UP인지 확인한다. 팀 저장소의 시연 화면은 `/`, 상태 화면은 `/status`에 있다. 시연 카드는 프론트의 고정 데이터를 사용한다. 실제 카탈로그 적재는 위 SQL로 확인한다. 프론트 주소의 `/api/v1/auth/session`이 HTML을 반환하면 기능 API 프록시 연결이 필요하다.
 
 ## 다른 버전의 파일 사용
 
