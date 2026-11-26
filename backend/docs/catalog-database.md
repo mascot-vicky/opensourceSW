@@ -1,6 +1,6 @@
 # 카탈로그 PostgreSQL 적재·조회
 
-관련 작업: #24 · 선행 로더: #22 / PR #23 · Docker 파일 연결: #29 / PR #30
+관련 작업: #24 · 선행 로더: #22 / PR #23 · Docker 파일 연결: #24 / PR #31
 
 ## 저장 구조
 
@@ -33,7 +33,7 @@ JSON은 배포·재적재 원본이며, 실행 중 조회의 기준은 PostgreSQ
 
 ## Docker에서 시작·확인
 
-PR #23·#24 구현과 #29의 `backend/compose.catalog.yml`이 모두 포함된 코드에서 저장소 루트 기준으로 실행합니다. 실제 고정 입력은 PR #30의 `backend/data/catalog/haenggung-2026-11-18.2/`에 포함합니다. 별도 파일 전달·재수집 없이 저장소 안의 JSON을 기본으로 사용합니다.
+PR #23·#24 구현과 #29의 `backend/compose.catalog.yml`이 모두 포함된 코드에서 저장소 루트 기준으로 실행합니다. 실제 고정 입력은 PR #31의 `backend/data/catalog/haenggung-2026-11-18.2/`에 포함합니다. 별도 파일 전달·재수집 없이 저장소 안의 JSON을 기본으로 사용합니다.
 
 ```sh
 docker compose -f docker-compose.yml -f backend/compose.catalog.yml config --quiet
